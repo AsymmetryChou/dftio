@@ -82,39 +82,42 @@ class SiestaParser(Parser):
         # tshs = self.raw_datas[idx]+ "/"+system_label+".TSHS"
         # hamil =  sisl.Hamiltonian.read(tshs)
         ORB_INDX = self.raw_datas[idx]+ "/"+system_label+".ORB_INDX"
-        ORB_INDX  = sisl.get_sile(ORB_INDX ).read_basis()
-        na = len(ORB_INDX)
-        basis_siesta = {}
+
+        with open(ORB_INDX , 'r') as file:
+            lines = file.readlines()
+
         basis = {}
-        for i in range(na):
-            if ORB_INDX[i].tag not in basis_siesta.keys():
-                basis_siesta[ORB_INDX[i].tag] = []
-                for j in range(ORB_INDX[i].no):
-                    basis_siesta[ORB_INDX[i].tag].append(ORB_INDX[i].orbitals[j].name())
+        all_orb_num = lines[0].split()[0]
+        all_elements = []
+        all_ia = []
+        all_l_info = []
+
+        for i in range(3, 3+int(all_orb_num)):
+            line = lines[i].split()
+            all_elements.append(line[3])
+            all_ia.append(int(line[1]))
+            all_l_info.append(line[6])
+
+        element_type = list(set(all_elements))
+        all_ia = np.array(all_ia)
+        all_l_info = np.array(all_l_info)
 
 
-        for atom_type in basis_siesta.keys():
-            split_basis = []
-            for i in range(len(basis_siesta[atom_type])):
-                split_basis.append(list(basis_siesta[atom_type][i])[1])
-            
-            counted_basis = Counter(split_basis)
-            
+        for e in element_type:
+            first_e_ia = all_elements.index(e)
+            mask = all_ia == all_ia[first_e_ia]
+            select_l_info = Counter(all_l_info[mask])
             counted_basis_list = []
-            for basis_type in counted_basis.keys():
-                if basis_type == 's':
-                    counted_basis_list.append(str(int(counted_basis['s']/1))+'s')
-                elif basis_type == 'p':
-                    assert abs(counted_basis['p']%3)<1e-6, "p orbital is not multiple of 3"
-                    counted_basis_list.append(str(int(counted_basis['p']/3))+'p')
-                elif basis_type == 'd':
-                    assert abs(counted_basis['d']%5)<1e-6, "d orbital is not multiple of 5"
-                    counted_basis_list.append(str(int(counted_basis['d']/5))+'d')
-                elif basis_type == 'f':
-                    assert abs(counted_basis['f']%7)<1e-6, "f orbital is not multiple of 7"
-                    counted_basis_list.append(str(int(counted_basis['f']/7))+'f')
-            
-            basis[atom_type] = "".join(counted_basis_list)
+            for l in select_l_info.keys():
+                if l == '0':
+                    counted_basis_list.append(str(int(select_l_info['0']/1))+'s')
+                elif l == '1':
+                    counted_basis_list.append(str(int(select_l_info['1']/3))+'p')
+                elif l == '2':
+                    counted_basis_list.append(str(int(select_l_info['2']/5))+'d')
+                elif l == '3':
+                    counted_basis_list.append(str(int(select_l_info['3']/7))+'f')
+            basis[str(e)] = "".join(counted_basis_list)
         
         return basis
 
