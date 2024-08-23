@@ -56,14 +56,46 @@ class SiestaParser(Parser):
     # essential
     def get_structure(self,idx):
         path = self.raw_datas[idx]
+        lattice_vectors,_ = self.find_content(path= path,str_to_find='LatticeVectors')
         struct,_ = self.find_content(path= path,str_to_find='AtomicCoordinatesAndAtomicSpecies')
-        struct = sisl.get_sile(struct).read_geometry()
+        chemspecis,_ = self.find_content(path= path,str_to_find='ChemicalSpeciesLabel')
+
+        with open(lattice_vectors, 'r') as file:
+            lines = file.readlines()
+        counter_start_end = []
+        for i in range(len(lines)):
+            if 'LatticeVectors' in lines[i].split():
+                counter_start_end.append(i)
+        lattice_vec = np.array([lines[i].split()[0:3] for i in range(counter_start_end[0]+1, counter_start_end[1])], dtype=np.float32)
+
+        with open(struct, 'r') as file:
+            lines = file.readlines()
+        counter_start_end = []
+        for i in range(len(lines)):
+            if 'AtomicCoordinatesAndAtomicSpecies' in lines[i].split():
+                counter_start_end.append(i)
+        struct_xyz = np.array([lines[i].split()[0:3] for i in range(counter_start_end[0]+1, counter_start_end[1])], dtype=np.float32)
+        element_type = [lines[i].split()[3] for i in range(counter_start_end[0]+1, counter_start_end[1])]
+
+        with open(chemspecis, 'r') as file:
+            lines = file.readlines()
+        counter_start_end = []
+        for i in range(len(lines)):
+            if 'ChemicalSpeciesLabel' in lines[i].split():
+                counter_start_end.append(i)
+        element_index = {}
+        for i in range(counter_start_end[0]+1, counter_start_end[1]):
+            element_index[int(lines[i].split()[0])] = lines[i].split()[1]
+        element_index_all = [element_index[int(e)] for e in element_type]
+
+
+        # struct = sisl.get_sile(struct).read_geometry()
         structure = {
-            _keys.ATOMIC_NUMBERS_KEY: np.array([struct.atoms[i].Z for i in range(struct.na)], dtype=np.int32),
+            _keys.ATOMIC_NUMBERS_KEY: np.array(element_index_all, dtype=np.int32),
             _keys.PBC_KEY: np.array([True, True, True]) # abacus does not allow non-pbc structure
         }
-        structure[_keys.POSITIONS_KEY] = struct.xyz.astype(np.float32)[np.newaxis, :, :]
-        structure[_keys.CELL_KEY] = struct.cell.astype(np.float32)[np.newaxis, :, :]
+        structure[_keys.POSITIONS_KEY] = struct_xyz.astype(np.float32)[np.newaxis, :, :]
+        structure[_keys.CELL_KEY] = lattice_vec.astype(np.float32)[np.newaxis, :, :]
 
         return structure
     
@@ -130,9 +162,28 @@ class SiestaParser(Parser):
             system_label = "siesta"
         hamiltonian_dict, overlap_dict, density_matrix_dict = None, None, None
         struct,_ = self.find_content(path= path,str_to_find='AtomicCoordinatesAndAtomicSpecies')
-        struct = sisl.get_sile(struct).read_geometry()
-        na = struct.na
-        element = [struct.atoms[i].Z for i in range(struct.na)]
+        chemspecis,_ = self.find_content(path= path,str_to_find='ChemicalSpeciesLabel')
+        
+        with open(struct, 'r') as file:
+            lines = file.readlines()
+        counter_start_end = []
+        for i in range(len(lines)):
+            line = lines[i].split()
+            if 'AtomicCoordinatesAndAtomicSpecies' in line:
+                counter_start_end.append(i)
+        element_type = [lines[i].split()[3] for i in range(counter_start_end[0]+1, counter_start_end[1])]
+        na = len(element_type)
+
+        with open(chemspecis, 'r') as file:
+            lines = file.readlines()
+        counter_start_end = []
+        for i in range(len(lines)):
+            if 'ChemicalSpeciesLabel' in lines[i].split():
+                counter_start_end.append(i)
+        element_symbol = {}
+        for i in range(counter_start_end[0]+1, counter_start_end[1]):
+            element_symbol[int(lines[i].split()[0])] = lines[i].split()[2]
+        element = [element_symbol[int(e)] for e in element_type]
         
         tshs = path+ "/"+system_label+".TSHS"
         if os.path.exists(tshs):
@@ -194,9 +245,9 @@ class SiestaParser(Parser):
             hamil_blocks = np.stack(hamil_blocks).astype(np.float32)
 
             for i in range(na):
-                si = ase.atom.chemical_symbols[element[i]]
+                si = element[i]
                 for j in range(na):
-                    sj = ase.atom.chemical_symbols[element[j]]
+                    sj = element[j]
                     keys = map(lambda x: "_".join([str(i),str(j),str(x[0].astype(np.int32)),\
                                 str(x[1].astype(np.int32)),str(x[2].astype(np.int32))]), hamil_Rvec)
                     i_norbs = site_norbits[i]
@@ -235,9 +286,9 @@ class SiestaParser(Parser):
             ovp_Rvec = Rvec[ovp_mask]
 
             for i in range(na):
-                si = ase.atom.chemical_symbols[element[i]]
+                si = element[i]
                 for j in range(na):
-                    sj = ase.atom.chemical_symbols[element[j]]
+                    sj = element[j]
                     keys = map(lambda x: "_".join([str(i),str(j),str(x[0].astype(np.int32)),\
                                 str(x[1].astype(np.int32)),str(x[2].astype(np.int32))]), ovp_Rvec)
                     i_norbs = site_norbits[i]
