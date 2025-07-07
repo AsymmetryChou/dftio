@@ -3,16 +3,16 @@ from scipy.linalg import block_diag
 import re
 from tqdm import tqdm
 from collections import Counter
-from ...constants import orbitalId, RESCU2DFTIO, anglrMId
+from dftio.constants import orbitalId, RESCU2DFTIO, anglrMId
 import ase
 import dpdata
 import glob
 import h5py
 import os
 import numpy as np
-from ..parse import Parser, ParserRegister, find_target_line
-from ...data import _keys
-from ...register import Register
+from dftio.io.parse import Parser, ParserRegister, find_target_line
+from dftio.data import _keys
+from dftio.register import Register
 
 Hartree2eV = 27.21138602
 Bohr2Angstrom = 0.52917721067
@@ -179,12 +179,6 @@ class RescuParser(Parser):
                 end = int(start + 2*l_dict[k][iv] + 1)
                 rot_index += list(range(start, end))
             rot_mat[k] = np.eye(len(rot_index))[rot_index]
-        
-        for i, mat in enumerate(rot_mat.values()):
-            import matplotlib.pyplot as plt
-
-            plt.matshow(mat)
-            plt.savefig("/personal/DFT/HAl100/rot_mat{}.png".format(i))
 
         hamiltonian_dict = {}
         overlap_dict = {}

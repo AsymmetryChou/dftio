@@ -21,6 +21,7 @@ Current:
 | RESCU    | √         |             | √           |                | √              |
 | SIESTA   | √         |             | √           | √              | √              |
 | Gaussian | √         |             | √           | √              | √              |
+| VASP     | √         | √           |             |                |                |
 
 Ongoing:
 
@@ -34,7 +35,7 @@ Ongoing:
 To parse the DFT output files into readable data format, user can follows:
 
 ```bash
-dftio parse [-h] [-ll {DEBUG,3,INFO,2,WARNING,1,ERROR,0}] [-lp LOG_PATH] [-m MODE] [-r ROOT] [-p PREFIX] [-o OUTROOT] [-f FORMAT] [-ham] [-ovp] [-dm] [-eig]
+dftio parse [-h] [-ll {DEBUG,3,INFO,2,WARNING,1,ERROR,0}] [-lp LOG_PATH] [-m MODE] [-n NUM_WORKERS] [-r ROOT] [-p PREFIX] [-o OUTROOT] [-f FORMAT] [-ham] [-ovp] [-dm] [-eig]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -43,6 +44,8 @@ optional arguments:
   -lp LOG_PATH, --log-path LOG_PATH
                         set log file to log messages to disk, if not specified, the logs will only be output to console (default: None)
   -m MODE, --mode MODE  The name of the DFT software. (default: abacus)
+  -n NUM_WORKERS, --num_workers NUM_WORKERS
+                        The number of workers used to parse the dataset. (For n>1, we use the multiprocessing to accelerate io.) (default: 1)
   -r ROOT, --root ROOT  The root directory of the DFT files. (default: ./)
   -p PREFIX, --prefix PREFIX
                         The prefix of the DFT files under root. (default: frame)
@@ -57,5 +60,8 @@ optional arguments:
   -eig, --eigenvalue    Whether to parse the kpoints and eigenvalues (default: False)
 ```
 
-## Call for Developers
+## Call for Contributors
 dftio is an open-source tool that calls for enthusiastic developers to contribute their talent. One can contribute through raising function requirement issues, or contact the current developer directly.
+
+### Current Contributors (in alphabetical order)
+Qiangqiang Gu, Jijie Zou, Mingkang Liu, Zixi Gan, Zhanghao Zhouyin

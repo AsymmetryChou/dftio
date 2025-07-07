@@ -3,14 +3,14 @@ from scipy.linalg import block_diag
 import re
 from tqdm import tqdm
 from collections import Counter
-from ...constants import orbitalId, ABACUS2DFTIO
+from dftio.constants import orbitalId, ABACUS2DFTIO
 import ase
 import dpdata
 import os
 import numpy as np
-from ..parse import Parser, ParserRegister, find_target_line
-from ...data import _keys
-from ...register import Register
+from dftio.io.parse import Parser, ParserRegister, find_target_line
+from dftio.data import _keys
+from dftio.register import Register
 
 @ParserRegister.register("abacus")
 class AbacusParser(Parser):
@@ -21,8 +21,11 @@ class AbacusParser(Parser):
             **kwargs
             ):
         super(AbacusParser, self).__init__(root, prefix)
-        self.raw_sys = [dpdata.LabeledSystem(self.raw_datas[idx], fmt='abacus/'+self.get_mode(idx)) for idx in range(len(self.raw_datas))]
-    
+        if self.get_mode(idx=0) == 'nscf':
+            self.raw_sys = [dpdata.System(self.raw_datas[idx]+'/STRU', fmt='abacus/stru') for idx in range(len(self.raw_datas))]
+        else:
+            self.raw_sys = [dpdata.LabeledSystem(self.raw_datas[idx], fmt='abacus/'+self.get_mode(idx)) for idx in range(len(self.raw_datas))]
+
     # essential
     def get_structure(self, idx):
         sys = self.raw_sys[idx]
@@ -46,18 +49,23 @@ class AbacusParser(Parser):
         return mode
     
     # essential
-    def get_eigenvalue(self, idx):
+    def get_eigenvalue(self, idx, band_index_min=0):
         path = self.raw_datas[idx]
         mode = self.get_mode(idx)
-        if mode=="scf":
+        if mode in ["scf", "nscf"]:
             assert os.path.exists(os.path.join(path, "OUT.ABACUS", "BANDS_1.dat"))
-            eigs = np.loadtxt(os.path.join(path, "OUT.ABACUS", "BANDS_1.dat"))[np.newaxis, :, 2:]
+            eigs = np.loadtxt(os.path.join(path, "OUT.ABACUS", "BANDS_1.dat"))[np.newaxis, :, 2+band_index_min:]
             assert os.path.exists(os.path.join(path, "OUT.ABACUS", "kpoints"))
             kpts = []
             with open(os.path.join(path, "OUT.ABACUS", "kpoints"), "r") as f:
                 line = find_target_line(f, "nkstot now")
                 nkstot = line.strip().split()[-1]
-                line = find_target_line(f, " KPOINTS ")
+                line = find_target_line(f, "KPOINTS ")
+                if not line:
+                    f.seek(0)
+                    line = find_target_line(f, "KPT ")
+                if not line: 
+                    raise Exception("Cannot find KPT or KPOINTS in kpoints file")
                 for _ in range(int(nkstot)):
                     line = f.readline()
                     kpt = []
@@ -71,7 +79,7 @@ class AbacusParser(Parser):
         else:
             raise NotImplementedError("mode {} is not supported.".format(mode))
             
-        return {_keys.ENERGY_EIGENVALUE_KEY: eigs, _keys.KPOINT_KEY: kpts}
+        return {_keys.ENERGY_EIGENVALUE_KEY: eigs.astype(np.float32), _keys.KPOINT_KEY: kpts.astype(np.float32)}
     
     # essential
     def get_basis(self, idx):
