@@ -25,29 +25,31 @@ class SiestaParser(Parser):
         super(SiestaParser, self).__init__(root, prefix)
                
 
-    def find_content(self,path,str_to_find):
-        # 用于存储包含SystemLabel标签的文件及其内容
-        fdf_files_with_system_label_content = {}
+    def find_content(self, path, str_to_find, 
+                     for_system_label=False,
+                     for_Kpt_bands=False):
+        if for_system_label and for_Kpt_bands:
+            raise ValueError("for_system_label and for_Kpt_bands \
+                             cannot both be True at the same time.")
         file_path = None
         system_label_content = None
-        # 遍历给定路径及其子目录
-        for root, dirs, files in os.walk(path):
+        for root, _, files in os.walk(path):
             for file in files:
-                if file.endswith('.fdf'):
+                    if not for_Kpt_bands and not file.endswith('.fdf'):
+                        continue
+                    
                     file_path = os.path.join(root, file)
                     try:
                         with open(file_path, 'r', encoding='utf-8') as f:
                             content = f.read()
-                            # 使用正则表达式匹配SystemLabel及其后面的内容
                             match = re.search(r'\b'+str_to_find+r'\b\s*(\S+)', content)
-                            if match:
+                            if match and for_system_label:
                                 system_label_content = match.group(1)
-                                fdf_files_with_system_label_content[file_path] = system_label_content
                                 break
                     except:
                         print(f"don't find {str_to_find} in {file_path}")
         
-        if system_label_content is None:
+        if for_system_label and system_label_content is None:
             print(f"don't find {str_to_find} in {file_path}, use the default value: siesta")
 
         return file_path, system_label_content   
@@ -100,14 +102,89 @@ class SiestaParser(Parser):
         return structure
     
     # essential
-    def get_eigenvalue(self, idx):
-        pass
+    def get_eigenvalue(self, idx, band_index_min=0):
+        """
+        Extracts the eigenvalues and k-points from SIESTA output files for a given calculation index.
+        k-point coordinates are extracted from log file ( ensure "WriteKbands    .true." in SIESTA input file).
+        Eigenvalues are extracted from the corresponding ".bands" file. 
+        Now it supports only non-spin-polarized calculations.
+        Args:
+            idx (int): Index of the calculation in `self.raw_datas` to process.
+            band_index_min (int, optional): Minimum band index to include in the output. Defaults to 0.
+        Returns:
+            dict: A dictionary containing:
+                - _keys.ENERGY_EIGENVALUE_KEY (np.ndarray): Eigenvalues of shape (1, num_kpts, num_bands), dtype float32.
+                - _keys.KPOINT_KEY (np.ndarray): K-point coordinates of shape (num_kpts, 3), dtype float32.
+        """
+        log_file,_ = self.find_content(path=self.raw_datas[idx], 
+                                       str_to_find='WELCOME',
+                                       for_Kpt_bands=True)
+        assert os.path.exists(log_file), f"Log file {log_file} does not exist."
+        
+        _,system_label = self.find_content(path=self.raw_datas[idx], 
+                                           str_to_find='SystemLabel', 
+                                           for_system_label=True)
+        if system_label is None:
+            system_label = "siesta"
+        eigs_file = os.path.join(self.raw_datas[idx], system_label + ".bands")
+        assert os.path.exists(eigs_file), f"Eigenvalue file {eigs_file} does not exist."
+
+        kpts = []
+        with open(log_file, 'r') as file:
+            lines = file.readlines()
+        for i, line in enumerate(lines):
+            if 'siesta: Band k vectors' in line:
+                # 下一行是表头 "  ik            k"，数据从下下一行开始
+                for data_line in lines[i+2:]:
+                    if not data_line.strip():  # 空行，终止读取
+                        break
+                    match = re.match(r'\s*\d+\s+([-\d\.Ee+]+)\s+([-\d\.Ee+]+)\s+([-\d\.Ee+]+)', data_line)
+                    if match:
+                        kvec = tuple(float(match.group(j)) for j in range(1, 4))
+                        kpts.append(kvec)
+                    else:
+                        break 
+                break  
+        if len(kpts) == 0:
+            raise ValueError("No k-points found in the log file.")
+        kpts = np.array(kpts)
+        
+        eigs = []
+        eigs_k = [] # 用于存储每个k点的能带
+        with open(eigs_file, 'r') as file:
+            lines = file.readlines()
+
+        for idx, line in enumerate(lines[3:]):
+            if idx == 0:
+                Num_bands = int(line.split()[0])
+                spin_degree = int(line.split()[1])
+                if spin_degree != 1:
+                    raise NotImplementedError("Only support non-spin-polarized calculations.")
+                Num_kpts = int(line.split()[2])
+                assert Num_kpts == len(kpts), f"Number of k-points in file ({Num_kpts}) does not match the number of k-points found ({len(kpts)})."
+                continue
+
+            if line.strip():  # 排除空行
+                eigs_k.extend([float(val) for val in line.strip().split()])
+                if len(eigs_k) == Num_bands+1:
+                    eigs.append(eigs_k[1:])  # 跳过第一个元素（k点索引）
+                    eigs_k = []
+            
+            if len(eigs) == Num_kpts: # 达到预期的k点数目
+                break
+
+        eigs = np.array(eigs)[np.newaxis, :, band_index_min:]
+        assert eigs.shape[1] == len(kpts), \
+            f"Number of kpoints for eigenvalues ({eigs.shape[1]}) does not match the number of k-points in Kline ({len(kpts)})." 
     
+        return {_keys.ENERGY_EIGENVALUE_KEY: eigs.astype(np.float32), _keys.KPOINT_KEY: kpts.astype(np.float32)}
+
+
     # essential
     def get_basis(self,idx):
         # {"Si": "2s2p1d"}
         path = self.raw_datas[idx]
-        _,system_label = self.find_content(path=path,str_to_find='SystemLabel')
+        _,system_label = self.find_content(path=path,str_to_find='SystemLabel',for_system_label=True)
         if system_label is None:
             system_label = "siesta"
 
@@ -157,12 +234,16 @@ class SiestaParser(Parser):
     # essential
     def get_blocks(self, idx, hamiltonian: bool = False, overlap: bool = False, density_matrix: bool = False):
         path = self.raw_datas[idx]
-        _,system_label = self.find_content(path=self.raw_datas[idx],str_to_find='SystemLabel')
+        _,system_label = self.find_content(path=self.raw_datas[idx],
+                                           str_to_find='SystemLabel', 
+                                           for_system_label=True)
         if system_label is None:
             system_label = "siesta"
         hamiltonian_dict, overlap_dict, density_matrix_dict = None, None, None
-        struct,_ = self.find_content(path= path,str_to_find='AtomicCoordinatesAndAtomicSpecies')
-        chemspecis,_ = self.find_content(path= path,str_to_find='ChemicalSpeciesLabel')
+        struct,_ = self.find_content(path= path,
+                                     str_to_find='AtomicCoordinatesAndAtomicSpecies')
+        chemspecis,_ = self.find_content(path= path,
+                                         str_to_find='ChemicalSpeciesLabel')
         
         with open(struct, 'r') as file:
             lines = file.readlines()
@@ -306,7 +387,9 @@ class SiestaParser(Parser):
                         overlap_dict.update(dict(zip(keys, block[block_mask])))
 
         if density_matrix:
-            _,system_label = self.find_content(path=self.raw_datas[idx],str_to_find='SystemLabel')
+            _,system_label = self.find_content(path=self.raw_datas[idx],
+                                               str_to_find='SystemLabel', 
+                                               for_system_label=True)
             if system_label is None:
                 system_label = "siesta"
             DM_path = self.raw_datas[idx]+ "/"+system_label+".DM"
