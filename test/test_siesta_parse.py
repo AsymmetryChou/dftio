@@ -75,4 +75,55 @@ def test_find_content(root_directory):
     _,system_label = SiestaParser.find_content(path=path, str_to_find='SystemLabel', for_system_label=True)
     assert system_label == "Au_cell"
 
+def test_parse_siesta_output(root_directory):
 
+    prefix = "siesta_out_withband"
+    root_directory = os.path.join(root_directory, "test", "data", "siesta")
+    parser = SiestaParser(root=root_directory, prefix=prefix)
+    assert len(parser.raw_datas) == 1, "Parser should have one raw data entry."
+
+    struct_info = parser.get_structure(0)
+    assert np.allclose(struct_info['atomic_numbers'], np.array([79, 79, 79, 79], dtype=np.int32))
+    assert np.array_equal(struct_info['pbc'], np.array([True, True, True]))
+    assert np.allclose(struct_info['pos'], np.array([[[0.     , 0.     , 0.     ],
+                                                      [0.     , 2.03915, 2.03915],
+                                                      [2.03915, 0.     , 2.03915],
+                                                      [2.03915, 2.03915, 0.     ]]], dtype=np.float32))
+    assert np.allclose(struct_info['cell'], np.array([[[4.0783, 0.    , 0.    ],
+                                                       [0.    , 4.0783, 0.    ],
+                                                       [0.    , 0.    , 4.0783]]], dtype=np.float32))
+
+    eigs_info = parser.get_eigenvalue(0)
+    assert np.allclose(eigs_info['kpoint'][0], np.array([0.0, 0.0, 0.0]))
+    assert np.allclose(eigs_info['kpoint'][2], np.array([0.05000059, 0.        , 0.05000059]))
+    assert np.allclose(eigs_info['kpoint'][11], parser.get_eigenvalue(0)['kpoint'][11])
+    assert eigs_info['eigenvalue'].shape == (1, 81, 60)
+    assert eigs_info['eigenvalue'][0, 0, 0] == pytest.approx(-11.9863)
+    assert eigs_info['eigenvalue'][0, 2, 3] == pytest.approx(-9.1764)
+    assert eigs_info['eigenvalue'][0, 10, 20] == pytest.approx(-4.189)
+
+    assert parser.get_basis(0) == {'Au': '2s1p2d'}
+
+    # store H,S,D results in a tuple: ([H1, H2, ...], [S1, S2, ...], [D1, D2, ...])
+    assert type(parser.get_blocks(idx=0,hamiltonian=True,overlap=False,density_matrix=False)) == tuple  
+
+    assert type(parser.get_blocks(idx=0,hamiltonian=True,overlap=False,density_matrix=False)[0][0]) == dict
+    assert parser.get_blocks(idx=0, hamiltonian=True, overlap=False, density_matrix=False)[0][0]['0_0_0_0_0'].shape == (15, 15)
+    assert parser.get_blocks(idx=0, hamiltonian=True, overlap=False, density_matrix=False)[0][0]['2_3_0_-1_0'].shape == (15, 15)
+    assert parser.get_blocks(idx=0, hamiltonian=True, overlap=False, density_matrix=False)[0][0]['0_0_0_0_0'][0,1] == pytest.approx(-2.3722997)
+    assert parser.get_blocks(idx=0, hamiltonian=True, overlap=False, density_matrix=False)[0][0]['1_2_0_-1_0'][0,1] == pytest.approx(-4.234535e-07)
+
+    assert type(parser.get_blocks(idx=0, hamiltonian=False, overlap=True, density_matrix=False)[1][0]) == dict
+    assert parser.get_blocks(idx=0, hamiltonian=False, overlap=True, density_matrix=False)[1][0]['0_0_0_0_0'].shape == (15, 15)
+    assert parser.get_blocks(idx=0, hamiltonian=False, overlap=True, density_matrix=False)[1][0]['2_3_0_-1_0'].shape == (15, 15)
+    assert parser.get_blocks(idx=0, hamiltonian=False, overlap=True, density_matrix=False)[1][0]['0_0_0_0_0'][0,0] == pytest.approx(1.00000000)
+    assert parser.get_blocks(idx=0, hamiltonian=False, overlap=True, density_matrix=False)[1][0]['0_0_0_0_0'][0,1] == pytest.approx(0.9065072)
+    assert parser.get_blocks(idx=0, hamiltonian=False, overlap=True, density_matrix=False)[1][0]['0_0_0_0_0'][0,1] == pytest.approx(0.0)
+    assert parser.get_blocks(idx=0, hamiltonian=False, overlap=True, density_matrix=False)[1][0]['1_2_0_1_0'][1,0] == pytest.approx(0.07965754)
+
+    assert type(parser.get_blocks(idx=0, hamiltonian=False, overlap=False, density_matrix=True)[2][0]) == dict
+    assert parser.get_blocks(idx=0, hamiltonian=False, overlap=False, density_matrix=True)[2][0]['0_0_0_0_0'].shape == (15, 15)
+    assert parser.get_blocks(idx=0, hamiltonian=False, overlap=False, density_matrix=True)[2][0]['2_3_0_-1_0'].shape == (15, 15)
+    assert parser.get_blocks(idx=0, hamiltonian=False, overlap=False, density_matrix=True)[2][0]['0_0_0_0_0'][0,0] == pytest.approx(0.99999994)
+    assert parser.get_blocks(idx=0, hamiltonian=False, overlap=False, density_matrix=True)[2][0]['0_0_0_0_0'][0,1] == pytest.approx(0.00000000)
+    assert parser.get_blocks(idx=0, hamiltonian=False, overlap=False, density_matrix=True)[2][0]['1_2_0_1_0'][1,0] == pytest.approx(0.00000000)
