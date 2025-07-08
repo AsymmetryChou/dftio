@@ -50,7 +50,8 @@ class SiestaParser(Parser):
         kpoints_twopi_over_a = np.dot(kpoints_bohr_inv, scale)
         return kpoints_twopi_over_a
 
-    def find_content(self, path, str_to_find, 
+    @staticmethod
+    def find_content(path, str_to_find, 
                      for_system_label=False,
                      for_Kpt_bands=False):
         if for_system_label and for_Kpt_bands:
@@ -83,9 +84,9 @@ class SiestaParser(Parser):
     # essential
     def get_structure(self,idx):
         path = self.raw_datas[idx]
-        lattice_vectors,_ = self.find_content(path= path,str_to_find='LatticeVectors')
-        struct,_ = self.find_content(path= path,str_to_find='AtomicCoordinatesAndAtomicSpecies')
-        chemspecis,_ = self.find_content(path= path,str_to_find='ChemicalSpeciesLabel')
+        lattice_vectors,_ = SiestaParser.find_content(path= path,str_to_find='LatticeVectors')
+        struct,_ = SiestaParser.find_content(path= path,str_to_find='AtomicCoordinatesAndAtomicSpecies')
+        chemspecis,_ = SiestaParser.find_content(path= path,str_to_find='ChemicalSpeciesLabel')
 
         with open(lattice_vectors, 'r') as file:
             lines = file.readlines()
@@ -141,12 +142,12 @@ class SiestaParser(Parser):
                 - _keys.ENERGY_EIGENVALUE_KEY (np.ndarray): Eigenvalues of shape (1, num_kpts, num_bands), dtype float32.
                 - _keys.KPOINT_KEY (np.ndarray): K-point coordinates of shape (num_kpts, 3), dtype float32.
         """
-        log_file,_ = self.find_content(path=self.raw_datas[idx], 
+        log_file,_ = SiestaParser.find_content(path=self.raw_datas[idx], 
                                        str_to_find='WELCOME',
                                        for_Kpt_bands=True)
         assert os.path.exists(log_file), f"Log file {log_file} does not exist."
         
-        _,system_label = self.find_content(path=self.raw_datas[idx], 
+        _,system_label = SiestaParser.find_content(path=self.raw_datas[idx], 
                                            str_to_find='SystemLabel', 
                                            for_system_label=True)
         if system_label is None:
@@ -174,7 +175,7 @@ class SiestaParser(Parser):
         kpts = np.array(kpts) # in units of Bohr^-1
 
         # unit change from Bohr^-1 to 2π/a
-        lattice_vec_path,_ = self.find_content(path=self.raw_datas[idx],str_to_find='LatticeVectors')
+        lattice_vec_path,_ = SiestaParser.find_content(path=self.raw_datas[idx],str_to_find='LatticeVectors')
         with open(lattice_vec_path, 'r') as file:
             lines = file.readlines()
         counter_start_end = []
@@ -219,7 +220,7 @@ class SiestaParser(Parser):
     def get_basis(self,idx):
         # {"Si": "2s2p1d"}
         path = self.raw_datas[idx]
-        _,system_label = self.find_content(path=path,str_to_find='SystemLabel',for_system_label=True)
+        _,system_label = SiestaParser.find_content(path=path,str_to_find='SystemLabel',for_system_label=True)
         if system_label is None:
             system_label = "siesta"
 
@@ -269,15 +270,15 @@ class SiestaParser(Parser):
     # essential
     def get_blocks(self, idx, hamiltonian: bool = False, overlap: bool = False, density_matrix: bool = False):
         path = self.raw_datas[idx]
-        _,system_label = self.find_content(path=self.raw_datas[idx],
+        _,system_label = SiestaParser.find_content(path=self.raw_datas[idx],
                                            str_to_find='SystemLabel', 
                                            for_system_label=True)
         if system_label is None:
             system_label = "siesta"
         hamiltonian_dict, overlap_dict, density_matrix_dict = None, None, None
-        struct,_ = self.find_content(path= path,
+        struct,_ = SiestaParser.find_content(path= path,
                                      str_to_find='AtomicCoordinatesAndAtomicSpecies')
-        chemspecis,_ = self.find_content(path= path,
+        chemspecis,_ = SiestaParser.find_content(path= path,
                                          str_to_find='ChemicalSpeciesLabel')
         
         with open(struct, 'r') as file:
@@ -422,7 +423,7 @@ class SiestaParser(Parser):
                         overlap_dict.update(dict(zip(keys, block[block_mask])))
 
         if density_matrix:
-            _,system_label = self.find_content(path=self.raw_datas[idx],
+            _,system_label = SiestaParser.find_content(path=self.raw_datas[idx],
                                                str_to_find='SystemLabel', 
                                                for_system_label=True)
             if system_label is None:
