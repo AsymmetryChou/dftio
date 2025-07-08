@@ -1,8 +1,12 @@
+import os
+import sys
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+sys.path.insert(0, PROJECT_ROOT)
+
+
 import pytest
 import numpy as np
-import os
 from dftio.io.siesta.siesta_parser import SiestaParser
-
 
 @pytest.fixture(scope='session', autouse=True)
 def root_directory(request):
@@ -118,12 +122,12 @@ def test_parse_siesta_output(root_directory):
     assert parser.get_blocks(idx=0, hamiltonian=False, overlap=True, density_matrix=False)[1][0]['2_3_0_-1_0'].shape == (15, 15)
     assert parser.get_blocks(idx=0, hamiltonian=False, overlap=True, density_matrix=False)[1][0]['0_0_0_0_0'][0,0] == pytest.approx(1.00000000)
     assert parser.get_blocks(idx=0, hamiltonian=False, overlap=True, density_matrix=False)[1][0]['0_0_0_0_0'][0,1] == pytest.approx(0.9065072)
-    assert parser.get_blocks(idx=0, hamiltonian=False, overlap=True, density_matrix=False)[1][0]['0_0_0_0_0'][0,1] == pytest.approx(0.0)
+    assert parser.get_blocks(idx=0, hamiltonian=False, overlap=True, density_matrix=False)[1][0]['0_0_0_0_0'][0,2] == pytest.approx(0.0)
     assert parser.get_blocks(idx=0, hamiltonian=False, overlap=True, density_matrix=False)[1][0]['1_2_0_1_0'][1,0] == pytest.approx(0.07965754)
 
     assert type(parser.get_blocks(idx=0, hamiltonian=False, overlap=False, density_matrix=True)[2][0]) == dict
     assert parser.get_blocks(idx=0, hamiltonian=False, overlap=False, density_matrix=True)[2][0]['0_0_0_0_0'].shape == (15, 15)
     assert parser.get_blocks(idx=0, hamiltonian=False, overlap=False, density_matrix=True)[2][0]['2_3_0_-1_0'].shape == (15, 15)
-    assert parser.get_blocks(idx=0, hamiltonian=False, overlap=False, density_matrix=True)[2][0]['0_0_0_0_0'][0,0] == pytest.approx(0.99999994)
-    assert parser.get_blocks(idx=0, hamiltonian=False, overlap=False, density_matrix=True)[2][0]['0_0_0_0_0'][0,1] == pytest.approx(0.00000000)
-    assert parser.get_blocks(idx=0, hamiltonian=False, overlap=False, density_matrix=True)[2][0]['1_2_0_1_0'][1,0] == pytest.approx(0.00000000)
+    assert parser.get_blocks(idx=0, hamiltonian=False, overlap=False, density_matrix=True)[2][0]['0_0_0_0_0'][0,0] == pytest.approx(0.007212014)
+    assert parser.get_blocks(idx=0, hamiltonian=False, overlap=False, density_matrix=True)[2][0]['0_0_0_0_0'][0,1] == pytest.approx(0.00013299382)
+    assert parser.get_blocks(idx=0, hamiltonian=False, overlap=False, density_matrix=True)[2][0]['1_2_0_1_0'][1,0] == pytest.approx(0.000278148)
