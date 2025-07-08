@@ -23,7 +23,32 @@ class SiestaParser(Parser):
             **kwargs
             ):
         super(SiestaParser, self).__init__(root, prefix)
-               
+    
+    @staticmethod
+    def convert_kpoints_bohr_inv_to_twopi_over_a(kpoints_bohr_inv, lattice_const_a_angstrom):
+        """
+        Convert k-points from units of 1/Bohr to units of 2π/a, where 'a' is the lattice constant.
+
+        Parameters
+        ----------
+        kpoints_bohr_inv : array-like or float
+            K-points in units of inverse Bohr radius (1/Bohr).
+        lattice_const_a_angstrom : float
+            Lattice constant 'a' in Angstroms.
+
+        Returns
+        -------
+        kpoints_twopi_over_a : array-like or float
+            K-points in units of 2π/a.
+
+        Notes
+        -----
+        The conversion uses the Bohr radius (a₀ = 0.529177 Å) and the provided lattice constant.
+        """
+        a0 = 0.529177  # Bohr radius in Å
+        scale = lattice_const_a_angstrom / (a0 * 2*np.pi)
+        kpoints_twopi_over_a = np.dot(kpoints_bohr_inv, scale)
+        return kpoints_twopi_over_a
 
     def find_content(self, path, str_to_find, 
                      for_system_label=False,
@@ -134,9 +159,8 @@ class SiestaParser(Parser):
             lines = file.readlines()
         for i, line in enumerate(lines):
             if 'siesta: Band k vectors' in line:
-                # 下一行是表头 "  ik            k"，数据从下下一行开始
                 for data_line in lines[i+2:]:
-                    if not data_line.strip():  # 空行，终止读取
+                    if not data_line.strip():  # skip empty lines
                         break
                     match = re.match(r'\s*\d+\s+([-\d\.Ee+]+)\s+([-\d\.Ee+]+)\s+([-\d\.Ee+]+)', data_line)
                     if match:
@@ -147,10 +171,21 @@ class SiestaParser(Parser):
                 break  
         if len(kpts) == 0:
             raise ValueError("No k-points found in the log file.")
-        kpts = np.array(kpts)
+        kpts = np.array(kpts) # in units of Bohr^-1
+
+        # unit change from Bohr^-1 to 2π/a
+        lattice_vec_path,_ = self.find_content(path=self.raw_datas[idx],str_to_find='LatticeVectors')
+        with open(lattice_vec_path, 'r') as file:
+            lines = file.readlines()
+        counter_start_end = []
+        for i in range(len(lines)):
+            if 'LatticeVectors' in lines[i].split():
+                counter_start_end.append(i)
+        lattice_vec = np.array([lines[i].split()[0:3] for i in range(counter_start_end[0]+1, counter_start_end[1])], dtype=np.float32)
+        kpts = SiestaParser.convert_kpoints_bohr_inv_to_twopi_over_a(kpts, lattice_vec) # in units of 2π/a
         
         eigs = []
-        eigs_k = [] # 用于存储每个k点的能带
+        eigs_k = [] # for each k-point
         with open(eigs_file, 'r') as file:
             lines = file.readlines()
 
@@ -164,13 +199,13 @@ class SiestaParser(Parser):
                 assert Num_kpts == len(kpts), f"Number of k-points in file ({Num_kpts}) does not match the number of k-points found ({len(kpts)})."
                 continue
 
-            if line.strip():  # 排除空行
+            if line.strip():  # eliminate empty lines
                 eigs_k.extend([float(val) for val in line.strip().split()])
                 if len(eigs_k) == Num_bands+1:
-                    eigs.append(eigs_k[1:])  # 跳过第一个元素（k点索引）
+                    eigs.append(eigs_k[1:])  # skip the first value (k-point index)
                     eigs_k = []
             
-            if len(eigs) == Num_kpts: # 达到预期的k点数目
+            if len(eigs) == Num_kpts: # if we have collected all k-points
                 break
 
         eigs = np.array(eigs)[np.newaxis, :, band_index_min:]
