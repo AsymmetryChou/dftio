@@ -450,9 +450,9 @@ class SiestaParser(Parser):
             DM_Rvec = Rvec[DM_mask]
 
             for i in range(na):
-                si = ase.atom.chemical_symbols[element[i]]
+                si = element[i]
                 for j in range(na):
-                    sj = ase.atom.chemical_symbols[element[j]]
+                    sj = element[j]
                     keys = map(lambda x: "_".join([str(i),str(j),str(x[0].astype(np.int32)),\
                                 str(x[1].astype(np.int32)),str(x[2].astype(np.int32))]), DM_Rvec)
                     i_norbs = site_norbits[i]
