@@ -82,7 +82,7 @@ class SiestaParser(Parser):
                     try:
                         with open(file_path, 'r') as f:
                             content = f.read()
-                            match = re.search(r'\b'+str_to_find+r'\b\s*(\S+)', content)
+                            match = re.search(r'\b'+str_to_find+r'\b\s*(\S+)', content, re.IGNORECASE)
                             if match:
                                 targeted_files.append(file_path)
                                 if for_system_label:
