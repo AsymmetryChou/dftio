@@ -67,6 +67,11 @@ class SiestaParser(Parser):
                         continue
 
                     if for_Kpt_bands:
+                        # SIESTA outputs the kpoints for band in log when 
+                        #           WriteKbands is set to true.
+                        # However, the name of the log file is not fixed.
+                        # Therefore, we target the log file by searching for 'WELCOME' 
+                        # in all the files in the directory except for some specific file types.
                         skip_format = ['.TSHS', '.DM', 'xml','BONDS','ORB_INDX',\
                                        'psf','nc','ion','psdump','xml']
                         if any(file.endswith(ext) for ext in skip_format):
@@ -166,6 +171,18 @@ class SiestaParser(Parser):
                 - _keys.ENERGY_EIGENVALUE_KEY (np.ndarray): Eigenvalues of shape (1, num_kpts, num_bands), dtype float32.
                 - _keys.KPOINT_KEY (np.ndarray): K-point coordinates of shape (num_kpts, 3), dtype float32.
         """
+        RUN_file, _ = SiestaParser.find_content(path=self.raw_datas[idx],
+                                       str_to_find='WriteKbands',
+                                       for_Kpt_bands=False)
+        with open(RUN_file, 'r') as file:
+            lines = file.readlines()
+        for line in lines:
+            if 'WriteKbands' in line.split():
+                if 'true' not in line.lower():
+                    raise ValueError("WriteKbands is not set to true in the SIESTA input file. \
+                                      Cannot extract k-points and eigenvalues.")
+
+
         log_file,_ = SiestaParser.find_content(path=self.raw_datas[idx], 
                                        str_to_find='WELCOME',
                                        for_Kpt_bands=True)
