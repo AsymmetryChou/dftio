@@ -77,11 +77,17 @@ class BandPlot(object):
             bmax = min(bmax, nbands)
         assert bmax>bmin, "max should be larger than min!"
 
-        ax.plot(self.eigs[:,bmin:bmax], 'b-', lw=1)
+        if self.kpoints.shape[0] > 1:
+            ax.plot(self.eigs[:,bmin:bmax], 'b-', lw=1)
+            ax.set_xlabel("k-point")
+            ax.set_title("Band Structure")
+        else:
+            for e in self.eigs[0, bmin:bmax]:
+                ax.hlines(e, xmin=-0.5, xmax=0.5, color='b', linewidth=1)
+                ax.set_xticks([])
+            ax.set_title("Energy levels")
         ax.text(0.5, 0.5, f"band windown: {bmin} - {bmax}", ha='center', va='center', transform=ax.transAxes)
-        ax.set_xlabel("k-point")
         ax.set_ylabel("Energy (eV)")
-        ax.set_title("Band Structure")
         plt.savefig(os.path.join(self.path, "band_structure.png"), dpi=300)
         plt.tight_layout()
         # if has gui? then plot show
