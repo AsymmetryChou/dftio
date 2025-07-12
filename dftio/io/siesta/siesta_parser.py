@@ -88,8 +88,8 @@ class SiestaParser(Parser):
                                 
         
         if for_system_label and system_label_content is None:
-            print(f"don't find {str_to_find} in {file_path}.\
-                     use the default value: siesta")
+            print(f"Warning: Don't find {str_to_find} in {file_path}.\
+                     use SIESTA default value: siesta")
 
         if len(targeted_files) > 1:
             file_path = targeted_files[-1]
