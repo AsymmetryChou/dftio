@@ -59,25 +59,47 @@ class SiestaParser(Parser):
                              cannot both be True at the same time.")
         file_path = None
         system_label_content = None
+        targeted_files = []
         for root, _, files in os.walk(path):
             for file in files:
                     if not for_Kpt_bands and not file.endswith('.fdf'):
+                        # Skip files that are not FDF files except for k-point bands search
                         continue
+
+                    if for_Kpt_bands:
+                        skip_format = ['.TSHS', '.DM', 'xml','BONDS','ORB_INDX','psf','nc']
+                        if any(file.endswith(ext) for ext in skip_format):
+                            continue
                     
                     file_path = os.path.join(root, file)
+                    print(f"Searching in file: {file_path}")
+
                     try:
-                        with open(file_path, 'r', encoding='utf-8') as f:
+                        with open(file_path, 'r') as f:
                             content = f.read()
                             match = re.search(r'\b'+str_to_find+r'\b\s*(\S+)', content)
-                            if match and for_system_label:
-                                system_label_content = match.group(1)
-                                break
-                    except:
-                        print(f"don't find {str_to_find} in {file_path}")
+                            if match:
+                                targeted_files.append(file_path)
+                                if for_system_label:
+                                    system_label_content = match.group(1)
+                    except Exception as e:
+                        print(f"Skipping file {file_path} due to error: {e}")
+                        continue
+                                
         
         if for_system_label and system_label_content is None:
-            print(f"don't find {str_to_find} in {file_path}, use the default value: siesta")
+            print(f"don't find {str_to_find} in {file_path}.\
+                     use the default value: siesta")
 
+        if len(targeted_files) > 1:
+            file_path = targeted_files[-1]
+            print(f"Warning: Multiple files found containing '{str_to_find}': {targeted_files}.\n \
+                            Using the last one: {file_path}.")
+        elif len(targeted_files) == 1:
+            file_path = targeted_files[0]
+        elif len(targeted_files) == 0:
+            raise FileNotFoundError(f"No file found containing '{str_to_find}' in {path}")
+        
         return file_path, system_label_content   
 
 
@@ -94,6 +116,8 @@ class SiestaParser(Parser):
         for i in range(len(lines)):
             if 'LatticeVectors' in lines[i].split():
                 counter_start_end.append(i)
+        assert len(counter_start_end) == 2, "LatticeVectors section not found or malformed."
+        # Extract lattice vectors
         lattice_vec = np.array([lines[i].split()[0:3] for i in range(counter_start_end[0]+1, counter_start_end[1])], dtype=np.float32)
 
         with open(struct, 'r') as file:
@@ -190,7 +214,24 @@ class SiestaParser(Parser):
         with open(eigs_file, 'r') as file:
             lines = file.readlines()
 
-        for idx, line in enumerate(lines[3:]):
+        # Determine the Gamma-only case or band case
+        isGamma :bool = False
+        if len(lines[2].split()) == 3:
+            # Gamma-only case
+            isGamma = True
+            start_line = 2
+            assert lines[2].split()[2] == '1', \
+                "The detected file is Gamma-only, but the number of k-points is not 1."
+        elif len(lines[3].split()) == 3:
+            # Band case
+            isGamma = False
+            start_line = 3
+            assert lines[3].split()[2] == str(len(kpts)), \
+                "The detected file is a band case, but the number of k-points does not match the number of k-points found in the log file."
+        else:
+            raise ValueError("Unexpected format in .band file. Expected Gamma-only or band case.")
+            
+        for idx, line in enumerate(lines[start_line:]):
             if idx == 0:
                 Num_bands = int(line.split()[0])
                 spin_degree = int(line.split()[1])
@@ -202,8 +243,10 @@ class SiestaParser(Parser):
 
             if line.strip():  # eliminate empty lines
                 eigs_k.extend([float(val) for val in line.strip().split()])
-                if len(eigs_k) == Num_bands+1:
-                    eigs.append(eigs_k[1:])  # skip the first value (k-point index)
+                if (isGamma and len(eigs_k) == Num_bands + 3) \
+                    or (not isGamma and len(eigs_k) == Num_bands + 1):
+                    skip = 3 if isGamma else 1
+                    eigs.append(eigs_k[skip:])
                     eigs_k = []
             
             if len(eigs) == Num_kpts: # if we have collected all k-points
