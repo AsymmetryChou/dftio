@@ -97,6 +97,7 @@ class SiestaParser(Parser):
         if for_system_label and system_label_content is None:
             print(f"Warning: Don't find {str_to_find} in {file_path}.\
                      use SIESTA default value: siesta")
+            system_label_content = "siesta"
 
         if len(targeted_files) > 1:
             file_path = targeted_files[-1]
@@ -173,6 +174,8 @@ class SiestaParser(Parser):
                 - _keys.ENERGY_EIGENVALUE_KEY (np.ndarray): Eigenvalues of shape (1, num_kpts, num_bands), dtype float32.
                 - _keys.KPOINT_KEY (np.ndarray): K-point coordinates of shape (num_kpts, 3), dtype float32.
         """
+        
+        # Check if WriteKbands is set to true in the SIESTA input file
         RUN_file, _ = SiestaParser.find_content(path=self.raw_datas[idx],
                                        str_to_find='WriteKbands',
                                        for_Kpt_bands=False)
@@ -184,20 +187,19 @@ class SiestaParser(Parser):
                     raise ValueError("WriteKbands is not set to true in the SIESTA input file. \
                                       Cannot extract k-points and eigenvalues.")
 
-
+        # Determine log_file, system_label, and eigs_file(.bands)
         log_file,_ = SiestaParser.find_content(path=self.raw_datas[idx], 
                                        str_to_find='WELCOME',
                                        for_Kpt_bands=True)
         assert os.path.exists(log_file), f"Log file {log_file} does not exist."
-        
         _,system_label = SiestaParser.find_content(path=self.raw_datas[idx], 
                                            str_to_find='SystemLabel', 
                                            for_system_label=True)
-        if system_label is None:
-            system_label = "siesta"
+        assert system_label is not None, "SystemLabel not defined."
         eigs_file = os.path.join(self.raw_datas[idx], system_label + ".bands")
         assert os.path.exists(eigs_file), f"Eigenvalue file {eigs_file} does not exist."
 
+        # Extract k-points from the log file
         kpts = []
         with open(log_file, 'r') as file:
             lines = file.readlines()
@@ -217,7 +219,7 @@ class SiestaParser(Parser):
             raise ValueError("No k-points found in the log file.")
         kpts = np.array(kpts) # in units of Bohr^-1
 
-        # unit change from Bohr^-1 to 2π/a
+        # unit from Bohr^-1 to 2π/a
         lattice_vec_path,_ = SiestaParser.find_content(path=self.raw_datas[idx],str_to_find='LatticeVectors')
         with open(lattice_vec_path, 'r') as file:
             lines = file.readlines()
@@ -228,21 +230,21 @@ class SiestaParser(Parser):
         lattice_vec = np.array([lines[i].split()[0:3] for i in range(counter_start_end[0]+1, counter_start_end[1])], dtype=np.float32)
         kpts = SiestaParser.convert_kpoints_bohr_inv_to_twopi_over_a(kpts, lattice_vec) # in units of 2π/a
         
+
+        # Extract eigenvalues from the eigs_file(.bands)
         eigs = []
-        eigs_k = [] # for each k-point
+        eigs_k = [] # eigenvalues for each k-point
         with open(eigs_file, 'r') as file:
             lines = file.readlines()
-
-        # Determine the Gamma-only case or band case
-        isGamma :bool = False
-        if len(lines[2].split()) == 3:
-            # Gamma-only case
+        ## Determine the Gamma-only case or band case
+        isGamma :bool = None
+        start_line : int = None
+        if len(lines[2].split()) == 3: ### Gamma-only case
             isGamma = True
             start_line = 2
             assert lines[2].split()[2] == '1', \
                 "The detected file is Gamma-only, but the number of k-points is not 1."
-        elif len(lines[3].split()) == 3:
-            # Band case
+        elif len(lines[3].split()) == 3: ### Band case
             isGamma = False
             start_line = 3
             assert lines[3].split()[2] == str(len(kpts)), \
@@ -251,6 +253,7 @@ class SiestaParser(Parser):
             raise ValueError("Unexpected format in .band file. Expected Gamma-only or band case.")
             
         for idx, line in enumerate(lines[start_line:]):
+            # Etract the number of bands, spin_degree and k-points from the first line
             if idx == 0:
                 Num_bands = int(line.split()[0])
                 spin_degree = int(line.split()[1])
@@ -259,7 +262,7 @@ class SiestaParser(Parser):
                 Num_kpts = int(line.split()[2])
                 assert Num_kpts == len(kpts), f"Number of k-points in file ({Num_kpts}) does not match the number of k-points found ({len(kpts)})."
                 continue
-
+            # Extract eigenvalues for each k-point
             if line.strip():  # eliminate empty lines
                 eigs_k.extend([float(val) for val in line.strip().split()])
                 if (isGamma and len(eigs_k) == Num_bands + 3) \
