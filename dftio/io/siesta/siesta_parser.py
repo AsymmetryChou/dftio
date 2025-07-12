@@ -82,6 +82,8 @@ class SiestaParser(Parser):
                     try:
                         with open(file_path, 'r') as f:
                             content = f.read()
+                            # Search for the string in the content with case insensitivity
+                            # because SIESTA input files are case-insensitive.
                             match = re.search(r'\b'+str_to_find+r'\b\s*(\S+)', content, re.IGNORECASE)
                             if match:
                                 targeted_files.append(file_path)
@@ -178,7 +180,7 @@ class SiestaParser(Parser):
             lines = file.readlines()
         for line in lines:
             if 'WriteKbands' in line.split():
-                if 'true' not in line.lower():
+                if 'true' not in line.lower() or "t" not in line.lower():
                     raise ValueError("WriteKbands is not set to true in the SIESTA input file. \
                                       Cannot extract k-points and eigenvalues.")
 
