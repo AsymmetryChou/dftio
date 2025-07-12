@@ -67,12 +67,12 @@ class SiestaParser(Parser):
                         continue
 
                     if for_Kpt_bands:
-                        skip_format = ['.TSHS', '.DM', 'xml','BONDS','ORB_INDX','psf','nc']
+                        skip_format = ['.TSHS', '.DM', 'xml','BONDS','ORB_INDX',\
+                                       'psf','nc','ion','psdump','xml']
                         if any(file.endswith(ext) for ext in skip_format):
                             continue
                     
                     file_path = os.path.join(root, file)
-                    print(f"Searching in file: {file_path}")
 
                     try:
                         with open(file_path, 'r') as f:
