@@ -248,30 +248,54 @@ class AbacusParser(Parser):
             if hamiltonian:
                 hamiltonian_dict = []
                 for i in range(sys.get_nframes()):
-                    hamil, tmp = self.parse_matrix(
-                        matrix_path=os.path.join(self.raw_datas[idx], "OUT.ABACUS", "matrix/"+str(i)+"_data-HR-sparse_SPIN0.csr"), 
-                        nsites=nsites,
-                        site_norbits=site_norbits,
-                        orbital_types_dict=orbital_types_dict,
-                        element=element,
-                        factor=13.605698, # Ryd2eV
-                        spinful=spinful
-                        )
+                    if os.path.exists(os.path.join(self.raw_datas[idx], "OUT.ABACUS", "matrix/")):
+                        hamil, tmp = self.parse_matrix(
+                            matrix_path=os.path.join(self.raw_datas[idx], "OUT.ABACUS", "matrix/"+str(i)+"_data-HR-sparse_SPIN0.csr"), 
+                            nsites=nsites,
+                            site_norbits=site_norbits,
+                            orbital_types_dict=orbital_types_dict,
+                            element=element,
+                            factor=13.605698, # Ryd2eV
+                            spinful=spinful
+                            )
+                    else:
+                        hamil, tmp = self.parse_matrix(
+                            matrix_path=os.path.join(self.raw_datas[idx], "OUT.ABACUS/data-HR-sparse_SPIN0.csr"), 
+                            nsites=nsites,
+                            site_norbits=site_norbits,
+                            orbital_types_dict=orbital_types_dict,
+                            element=element,
+                            factor=13.605698, # Ryd2eV
+                            spinful=spinful,
+                            step=i
+                            )
                     assert tmp == int(np.sum(site_norbits)) * (1 + spinful)
                     hamiltonian_dict.append(hamil)
 
             if overlap:
                 overlap_dict = []
                 for i in range(sys.get_nframes()):
-                    ovp, tmp = self.parse_matrix(
-                        matrix_path=os.path.join(self.raw_datas[idx], "OUT.ABACUS", "matrix/"+str(i)+"_data-SR-sparse_SPIN0.csr"), 
-                        nsites=nsites,
-                        site_norbits=site_norbits,
-                        orbital_types_dict=orbital_types_dict,
-                        element=element,
-                        factor=1,
-                        spinful=spinful
-                        )
+                    if os.path.exists(os.path.join(self.raw_datas[idx], "OUT.ABACUS", "matrix/")):
+                        ovp, tmp = self.parse_matrix(
+                            matrix_path=os.path.join(self.raw_datas[idx], "OUT.ABACUS", "matrix/"+str(i)+"_data-SR-sparse_SPIN0.csr"), 
+                            nsites=nsites,
+                            site_norbits=site_norbits,
+                            orbital_types_dict=orbital_types_dict,
+                            element=element,
+                            factor=1,
+                            spinful=spinful
+                            )
+                    else:
+                        ovp, tmp = self.parse_matrix(
+                            matrix_path=os.path.join(self.raw_datas[idx], "OUT.ABACUS/data-SR-sparse_SPIN0.csr"), 
+                            nsites=nsites,
+                            site_norbits=site_norbits,
+                            orbital_types_dict=orbital_types_dict,
+                            element=element,
+                            factor=1,
+                            spinful=spinful,
+                            step=i
+                            )
                     assert tmp == int(np.sum(site_norbits)) * (1 + spinful)
 
                     if spinful:
@@ -285,15 +309,28 @@ class AbacusParser(Parser):
             if density_matrix:
                 density_matrix_dict = []
                 for i in range(sys.get_nframes()):
-                    dm, tmp = self.parse_matrix(
-                        matrix_path=os.path.join(self.raw_datas[idx], "OUT.ABACUS", "matrix/"+str(i)+"_data-DMR-sparse_SPIN0.csr"), 
-                        nsites=nsites,
-                        site_norbits=site_norbits,
-                        orbital_types_dict=orbital_types_dict,
-                        element=element,
-                        factor=1,
-                        spinful=spinful
-                        )
+                    if os.path.exists(os.path.join(self.raw_datas[idx], "OUT.ABACUS", "matrix/")):
+                        dm, tmp = self.parse_matrix(
+                            matrix_path=os.path.join(self.raw_datas[idx], "OUT.ABACUS", "matrix/"+str(i)+"_data-DMR-sparse_SPIN0.csr"), 
+                            nsites=nsites,
+                            site_norbits=site_norbits,
+                            orbital_types_dict=orbital_types_dict,
+                            element=element,
+                            factor=1,
+                            spinful=spinful
+                            )
+                    else:
+                        dm, tmp = self.parse_matrix(
+                            matrix_path=os.path.join(self.raw_datas[idx], "OUT.ABACUS/data-DMR-sparse_SPIN0.csr"), 
+                            nsites=nsites,
+                            site_norbits=site_norbits,
+                            orbital_types_dict=orbital_types_dict,
+                            element=element,
+                            factor=1,
+                            spinful=spinful,
+                            step=i
+                            )
+
                     assert tmp == int(np.sum(site_norbits)) * (1 + spinful)
                     density_matrix_dict.append(dm)
         else:
@@ -301,15 +338,29 @@ class AbacusParser(Parser):
         
         return hamiltonian_dict, overlap_dict, density_matrix_dict
 
-    def parse_matrix(self, matrix_path, nsites, site_norbits, orbital_types_dict, element, factor, spinful=False):
+    def parse_matrix(self, matrix_path, nsites, site_norbits, orbital_types_dict, element, factor, spinful=False, step=0):
         site_norbits_cumsum = np.cumsum(site_norbits)
         norbits = int(np.sum(site_norbits))
         matrix_dict = dict()
         with open(matrix_path, 'r') as f:
             line = f.readline() # read "Matrix Dimension of ..."
             if not "Matrix Dimension of" in line:
+                """In this case, the starting of the file is STEP 0"""
+                # find the correct step
+                step_found = False
+                while line and not step_found:
+                    if "STEP" in line:
+                        stp = int(line.split()[-1])
+                        if stp != step:
+                            line = f.readline()
+                        else:
+                            step_found = True
+                    else:
+                        line = f.readline()
                 line = f.readline() # ABACUS >= 3.0
                 assert "Matrix Dimension of" in line
+            else:
+                assert step == 0
             f.readline() # read "Matrix number of ..."
             norbits = int(line.split()[-1])
             for line in f:
