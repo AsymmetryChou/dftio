@@ -153,6 +153,12 @@ def main_parser() -> argparse.ArgumentParser:
         default=0,
         help="The initial band index for eigenvalues to save.(0-band_index_min) bands will be ignored!"
     )
+    parser_parse.add_argument(
+        "-energy",
+        "--energy",
+        action="store_true",
+        help="Whether to parse the total energy (Etot) from DFT output",
+    )
     
     parser_band = subparsers.add_parser(
         "band",

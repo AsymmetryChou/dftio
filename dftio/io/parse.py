@@ -211,13 +211,13 @@ class Parser(ABC):
 
         return True
     
-    def write(self, idx, outroot, format, eigenvalue, hamiltonian, overlap, density_matrix, band_index_min, **kwargs):
+    def write(self, idx, outroot, format, eigenvalue, hamiltonian, overlap, density_matrix, band_index_min, energy=False, **kwargs):
         if format == "hdf5":
-            self.write_hdf5(idx=idx, outroot=outroot, eigenvalue=eigenvalue, hamiltonian=hamiltonian, overlap=overlap, density_matrix=density_matrix,band_index_min=band_index_min)
+            self.write_hdf5(idx=idx, outroot=outroot, eigenvalue=eigenvalue, hamiltonian=hamiltonian, overlap=overlap, density_matrix=density_matrix,band_index_min=band_index_min, energy=energy)
         elif format in ["dat", "ase"]:
-            self.write_dat(idx=idx, outroot=outroot, fmt=format, eigenvalue=eigenvalue, hamiltonian=hamiltonian, overlap=overlap, density_matrix=density_matrix,band_index_min=band_index_min)
+            self.write_dat(idx=idx, outroot=outroot, fmt=format, eigenvalue=eigenvalue, hamiltonian=hamiltonian, overlap=overlap, density_matrix=density_matrix,band_index_min=band_index_min, energy=energy)
         elif format == "lmdb":
-            self.write_lmdb(idx=idx, outroot=outroot, eigenvalue=eigenvalue, hamiltonian=hamiltonian, overlap=overlap, density_matrix=density_matrix,band_index_min=band_index_min)
+            self.write_lmdb(idx=idx, outroot=outroot, eigenvalue=eigenvalue, hamiltonian=hamiltonian, overlap=overlap, density_matrix=density_matrix,band_index_min=band_index_min, energy=energy)
         else:
             raise NotImplementedError(f"Format: {format} is not implemented!")
         
@@ -242,10 +242,10 @@ class Parser(ABC):
         else:
             raise NotImplementedError(f"Format: {fmt} is not implemented!")
 
-    def write_dat(self, idx, outroot, fmt='dat', eigenvalue=False, hamiltonian=False, overlap=False, density_matrix=False, band_index_min=0):
+    def write_dat(self, idx, outroot, fmt='dat', eigenvalue=False, hamiltonian=False, overlap=False, density_matrix=False, band_index_min=0, energy=False):
         # write structure
         os.makedirs(outroot, exist_ok=True)
-       
+
         structure = self.get_structure(idx)
 
         out_dir = os.path.join(outroot, self.formula(idx=idx)+".{}".format(idx))
@@ -255,7 +255,7 @@ class Parser(ABC):
         # np.savetxt(os.path.join(out_dir, "positions.dat"), structure[_keys.POSITIONS_KEY].reshape(-1, 3))
         # np.savetxt(os.path.join(out_dir, "atomic_numbers.dat"), structure[_keys.ATOMIC_NUMBERS_KEY], fmt='%d')
         # np.savetxt(os.path.join(out_dir, "pbc.dat"), structure[_keys.PBC_KEY])
-        
+
         # write structure
         self.write_struct(structure, out_dir, fmt=fmt)
 
@@ -265,6 +265,17 @@ class Parser(ABC):
             self.check_eigenvalue(idx=idx, eigstatus=eigstatus)
             np.save(os.path.join(out_dir, "kpoints.npy"), eigstatus[_keys.KPOINT_KEY])
             np.save(os.path.join(out_dir, "eigenvalues.npy"), eigstatus[_keys.ENERGY_EIGENVALUE_KEY])
+
+        # write energy
+        if energy:
+            if hasattr(self, 'get_etot'):
+                energy_data = self.get_etot(idx)
+                if energy_data is not None:
+                    np.save(os.path.join(out_dir, "total_energy.npy"), energy_data[_keys.TOTAL_ENERGY_KEY])
+                else:
+                    log.warning(f"Failed to extract energy for structure {idx}")
+            else:
+                log.warning(f"Parser does not implement get_etot method")
 
         # write blocks
         if any([hamiltonian is not None, overlap is not None, density_matrix is not None]) and any([hamiltonian, overlap, density_matrix]):
@@ -279,7 +290,7 @@ class Parser(ABC):
                         for key_str, value in ham[i].items():
                             default_group.create_dataset(key_str, data=value)
             del ham
-            
+
             if overlap:
                 with h5py.File(os.path.join(out_dir, "overlaps.h5"), 'w') as fid:
                     for i in range(len(ovp)):
@@ -287,19 +298,19 @@ class Parser(ABC):
                         for key_str, value in ovp[i].items():
                             default_group.create_dataset(key_str, data=value)
             del ovp
-            
+
             if density_matrix:
                 with h5py.File(os.path.join(out_dir, "density_matrices.h5"), 'w') as fid:
                     for i in range(len(dm)):
                         default_group = fid.create_group(str(i))
                         for key_str, value in dm[i].items():
                             default_group.create_dataset(key_str, data=value)
-            
+
             del dm
 
         return True
     
-    def write_lmdb(self, idx, outroot, eigenvalue: bool=False, hamiltonian: bool=False, overlap: bool=False, density_matrix: bool=False,band_index_min=0):
+    def write_lmdb(self, idx, outroot, eigenvalue: bool=False, hamiltonian: bool=False, overlap: bool=False, density_matrix: bool=False,band_index_min=0, energy: bool=False):
         os.makedirs(outroot, exist_ok=True)
         out_dir = os.path.join(outroot, "data.{}.lmdb".format(os.getpid()))
         structure = self.get_structure(idx)
@@ -307,6 +318,12 @@ class Parser(ABC):
             ham, ovp, dm = self.get_blocks(idx, hamiltonian, overlap, density_matrix)
         if eigenvalue:
             eigstatus = self.get_eigenvalue(idx=idx, band_index_min=band_index_min)
+        if energy:
+            if hasattr(self, 'get_etot'):
+                energy_data = self.get_etot(idx)
+            else:
+                energy_data = None
+                log.warning(f"Parser does not implement get_etot method")
 
         n_frames = structure[_keys.POSITIONS_KEY].shape[0]
         lmdb_env = lmdb.open(out_dir, map_size=1048576000000, lock=True)
@@ -320,6 +337,16 @@ class Parser(ABC):
             if eigenvalue:
                 data_dict[_keys.ENERGY_EIGENVALUE_KEY] = eigstatus[_keys.ENERGY_EIGENVALUE_KEY][nf]
                 data_dict[_keys.KPOINT_KEY] = eigstatus[_keys.KPOINT_KEY]
+
+            if energy and energy_data is not None:
+                # For single structure (SCF/NSCF), energy_data has shape [1,]
+                # For trajectories (MD/RELAX), energy_data has shape [nframes,]
+                if energy_data[_keys.TOTAL_ENERGY_KEY].shape[0] == 1:
+                    # Single structure case
+                    data_dict[_keys.TOTAL_ENERGY_KEY] = energy_data[_keys.TOTAL_ENERGY_KEY][0]
+                else:
+                    # Trajectory case
+                    data_dict[_keys.TOTAL_ENERGY_KEY] = energy_data[_keys.TOTAL_ENERGY_KEY][nf]
 
             if hamiltonian:
                 data_dict["hamiltonian"] = ham[nf]

@@ -414,6 +414,163 @@ class AbacusParser(Parser):
 
         return block_lefts @ mat @ block_rights.T
 
+    def _extract_energy_from_log(self, loglines, mode, nframes=None, dump_freq=1):
+        """
+        Extract total energy from ABACUS log file.
+
+        Parameters
+        ----------
+        loglines : list of str
+            Lines from the log file
+        mode : str
+            Calculation mode (scf, nscf, md, relax)
+        nframes : int, optional
+            Expected number of frames (for MD/relax validation)
+        dump_freq : int, optional
+            Dump frequency for MD calculations (default: 1)
+
+        Returns
+        -------
+        np.ndarray or None
+            Array of energies in eV, or None if extraction fails
+        """
+        energy = []
+
+        if mode in ["scf", "nscf"]:
+            # For SCF/NSCF, search from the end for the final energy
+            for line in reversed(loglines):
+                if "final etot is" in line:
+                    # LTS version format: "final etot is <value> eV"
+                    Etot = float(line.split()[-2])
+                    return np.array([Etot], dtype=np.float32)
+                elif "TOTAL ENERGY" in line:
+                    # Develop version format
+                    Etot = float(line.split()[-2])
+                    return np.array([Etot], dtype=np.float32)
+                elif "convergence has NOT been achieved!" in line or \
+                     "convergence has not been achieved" in line:
+                    # SCF did not converge
+                    return None
+            return None
+
+        elif mode == "md":
+            # For MD, extract all energies at dump intervals
+            nenergy = 0
+            for line in loglines:
+                if "final etot is" in line:
+                    if nenergy % dump_freq == 0:
+                        energy.append(float(line.split()[-2]))
+                    nenergy += 1
+                elif "!! convergence has not been achieved" in line:
+                    if nenergy % dump_freq == 0:
+                        energy.append(np.nan)
+                    nenergy += 1
+
+            if len(energy) == 0:
+                return None
+
+            # Filter out unconverged frames (NaN values)
+            energy = np.array(energy, dtype=np.float32)
+            valid_mask = ~np.isnan(energy)
+            if not valid_mask.any():
+                return None
+
+            energy = energy[valid_mask]
+            return energy
+
+        elif mode == "relax":
+            # For RELAX, extract energies synchronizing with coordinate frames
+            # Count coordinate frames first
+            ncoords = 0
+            for line in loglines:
+                if len(line.split()) >= 2 and line.split()[1] == "COORDINATES":
+                    ncoords += 1
+
+            if ncoords == 0:
+                return None
+
+            # Extract energies
+            for line in loglines:
+                if line[1:14] == "final etot is":
+                    # Add NaN for unconverged structures
+                    while len(energy) < ncoords - 1:
+                        energy.append(np.nan)
+                    # Get energy for current structure
+                    energy.append(float(line.split()[-2]))
+
+            # Delete trailing structures with no energy
+            while len(energy) < ncoords:
+                ncoords -= 1
+
+            energy = energy[:ncoords]
+
+            # Filter out unconverged structures
+            energy_array = np.array(energy, dtype=np.float32)
+            valid_mask = ~np.isnan(energy_array)
+
+            if not valid_mask.any():
+                return None
+
+            energy_array = energy_array[valid_mask]
+            return energy_array
+
+        else:
+            return None
+
+    def get_etot(self, idx):
+        """
+        Extract total energy (Etot) from ABACUS output.
+
+        Parameters
+        ----------
+        idx : int
+            Index of the structure/trajectory
+
+        Returns
+        -------
+        dict
+            Dictionary with _keys.TOTAL_ENERGY_KEY containing energy array.
+            Shape: [1,] for SCF/NSCF, [nframes,] for MD/RELAX.
+            Energy values are in eV.
+            Returns None if energy extraction fails or structures are unconverged.
+        """
+        mode = self.get_mode(idx)
+        logfile = "running_" + mode + ".log"
+        logpath = os.path.join(self.raw_datas[idx], "OUT.ABACUS", logfile)
+
+        # Check if log file exists
+        if not os.path.exists(logpath):
+            raise FileNotFoundError(f"Log file {logpath} does not exist.")
+
+        # Read log file
+        with open(logpath, 'r') as f:
+            loglines = f.readlines()
+
+        # Get dump frequency for MD mode
+        dump_freq = 1
+        if mode == "md":
+            input_path = os.path.join(self.raw_datas[idx], "INPUT")
+            if os.path.exists(input_path):
+                with open(input_path, 'r') as f:
+                    for line in f:
+                        if len(line) > 0 and "md_dumpfreq" in line and "md_dumpfreq" == line.split()[0]:
+                            dump_freq = int(line.split()[1])
+                            break
+
+        # Get number of frames from dpdata system
+        nframes = None
+        if mode in ["md", "relax"]:
+            sys = self.raw_sys[idx]
+            nframes = sys.get_nframes()
+
+        # Extract energy
+        energy = self._extract_energy_from_log(loglines, mode, nframes, dump_freq)
+
+        if energy is None:
+            return None
+
+        return {_keys.TOTAL_ENERGY_KEY: energy}
+
     def get_abs_h0_folders(self, h0_root):
         # Build a map of all directory names to their full paths to avoid repeated os.walk calls
         folder_path_map = {}
