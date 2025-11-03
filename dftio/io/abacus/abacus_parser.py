@@ -442,11 +442,11 @@ class AbacusParser(Parser):
                 if "final etot is" in line:
                     # LTS version format: "final etot is <value> eV"
                     Etot = float(line.split()[-2])
-                    return np.array([Etot], dtype=np.float32)
+                    return np.array([Etot], dtype=np.float64)
                 elif "TOTAL ENERGY" in line:
                     # Develop version format
                     Etot = float(line.split()[-2])
-                    return np.array([Etot], dtype=np.float32)
+                    return np.array([Etot], dtype=np.float64)
                 elif "convergence has NOT been achieved!" in line or \
                      "convergence has not been achieved" in line:
                     # SCF did not converge
@@ -470,7 +470,7 @@ class AbacusParser(Parser):
                 return None
 
             # Filter out unconverged frames (NaN values)
-            energy = np.array(energy, dtype=np.float32)
+            energy = np.array(energy, dtype=np.float64)
             valid_mask = ~np.isnan(energy)
             if not valid_mask.any():
                 return None
@@ -505,7 +505,7 @@ class AbacusParser(Parser):
             energy = energy[:ncoords]
 
             # Filter out unconverged structures
-            energy_array = np.array(energy, dtype=np.float32)
+            energy_array = np.array(energy, dtype=np.float64)
             valid_mask = ~np.isnan(energy_array)
 
             if not valid_mask.any():
