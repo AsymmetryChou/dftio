@@ -127,8 +127,90 @@ def test_abacus_energy_write_lmdb():
         print(f"LMDB format energy write test passed")
 
 
+def test_abacus_md_energy():
+    """Test energy extraction for MD calculation."""
+    test_data_dir = os.path.join(os.path.dirname(__file__), "data", "abacus_md")
+
+    parser = AbacusParser(
+        root=[test_data_dir],
+        prefix=""
+    )
+
+    # Test get_etot method
+    energy_data = parser.get_etot(idx=0)
+
+    assert energy_data is not None, "Energy data should not be None"
+    assert _keys.TOTAL_ENERGY_KEY in energy_data, f"Energy data should contain {_keys.TOTAL_ENERGY_KEY}"
+
+    energy = energy_data[_keys.TOTAL_ENERGY_KEY]
+
+    # Check shape - should be [nframes,] for MD (11 frames in test data)
+    expected_nframes = 11
+    assert energy.shape == (expected_nframes,), f"Expected shape ({expected_nframes},), got {energy.shape}"
+
+    # Check dtype
+    assert energy.dtype == np.float64, f"Expected dtype float64, got {energy.dtype}"
+
+    # Check first few energy values from the log file
+    expected_energies = np.array([
+        -845.88136814,
+        -845.88023386,
+        -845.87688911,
+        -845.87146567,
+        -845.86416254,
+        -845.85525948,
+        -845.84511407,
+        -845.83414351,
+        -845.82280254,
+        -845.81156302,
+        -845.80089500
+    ], dtype=np.float64)
+
+    assert np.allclose(energy, expected_energies, atol=1e-5), \
+        f"MD energies don't match expected values.\nExpected:\n{expected_energies}\nGot:\n{energy}"
+
+    print(f"MD energy extraction test passed: {energy.shape[0]} frames extracted")
+
+
+def test_abacus_relax_energy():
+    """Test energy extraction for RELAX calculation."""
+    test_data_dir = os.path.join(os.path.dirname(__file__), "data", "abacus_relax")
+
+    parser = AbacusParser(
+        root=[test_data_dir],
+        prefix=""
+    )
+
+    # Test get_etot method
+    energy_data = parser.get_etot(idx=0)
+
+    assert energy_data is not None, "Energy data should not be None"
+    assert _keys.TOTAL_ENERGY_KEY in energy_data, f"Energy data should contain {_keys.TOTAL_ENERGY_KEY}"
+
+    energy = energy_data[_keys.TOTAL_ENERGY_KEY]
+
+    # Check shape - should be [nframes,] for RELAX (4 frames in test data)
+    expected_nframes = 1
+    assert energy.shape == (expected_nframes,), f"Expected shape ({expected_nframes},), got {energy.shape}"
+
+    # Check dtype
+    assert energy.dtype == np.float64, f"Expected dtype float64, got {energy.dtype}"
+
+    # Check energy values from the log file
+    expected_energies = np.array([
+        -208.06746292
+    ], dtype=np.float64)
+
+    assert np.allclose(energy, expected_energies, atol=1e-5), \
+        f"RELAX energies don't match expected values.\nExpected:\n{expected_energies}\nGot:\n{energy}"
+
+    print(f"RELAX energy extraction test passed: {energy.shape[0]} frames extracted")
+
+
 if __name__ == "__main__":
     test_abacus_scf_energy()
     test_abacus_energy_write_dat()
     test_abacus_energy_write_lmdb()
+    test_abacus_md_energy()
+    test_abacus_relax_energy()
     print("\nAll energy extraction tests passed!")

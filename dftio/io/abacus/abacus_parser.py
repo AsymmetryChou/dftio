@@ -418,6 +418,10 @@ class AbacusParser(Parser):
         """
         Extract total energy from ABACUS log file.
 
+        For SCF/NSCF, extracts the final total energy.
+        For MD, extracts energies at each dump interval, filtering out unconverged frames.
+        For RELAX, extracts energies for the final converged structure.
+
         Parameters
         ----------
         loglines : list of str
@@ -479,41 +483,19 @@ class AbacusParser(Parser):
             return energy
 
         elif mode == "relax":
-            # For RELAX, extract energies synchronizing with coordinate frames
-            # Count coordinate frames first
-            ncoords = 0
+            relax_success = False
+            # For RELAX, extract energy for the converged structures
             for line in loglines:
-                if len(line.split()) >= 2 and line.split()[1] == "COORDINATES":
-                    ncoords += 1
-
-            if ncoords == 0:
-                return None
-
-            # Extract energies
-            for line in loglines:
-                if line[1:14] == "final etot is":
-                    # Add NaN for unconverged structures
-                    while len(energy) < ncoords - 1:
-                        energy.append(np.nan)
-                    # Get energy for current structure
+                if "Relaxation is converged!" in line:
+                    relax_success = True
+                if "!FINAL_ETOT_IS" in line:
                     energy.append(float(line.split()[-2]))
 
-            # Delete trailing structures with no energy
-            while len(energy) < ncoords:
-                ncoords -= 1
-
-            energy = energy[:ncoords]
-
-            # Filter out unconverged structures
-            energy_array = np.array(energy, dtype=np.float64)
-            valid_mask = ~np.isnan(energy_array)
-
-            if not valid_mask.any():
-                return None
-
-            energy_array = energy_array[valid_mask]
-            return energy_array
-
+            if relax_success and len(energy) > 0:
+                return np.array(energy, dtype=np.float64)
+            else:
+                raise ValueError("Relaxation did not converge or no energies found.")
+    
         else:
             return None
 
