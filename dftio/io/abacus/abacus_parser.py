@@ -418,6 +418,8 @@ class AbacusParser(Parser):
         """
         Extract total energy from ABACUS log file.
 
+        Note that this extractor is only validated for ABACUS versions 3.9.0.
+
         For SCF/NSCF, extracts the final total energy.
         For MD, extracts energies at each dump interval, filtering out unconverged frames.
         For RELAX, extracts energies for the final converged structure.
