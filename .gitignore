@@ -163,3 +163,4 @@ cython_debug/
 test/data/siesta/siesta_out/*
 example/siesta_io/siesta_io.ipynb
 CLAUDE.md
+playground/*
