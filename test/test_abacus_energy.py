@@ -8,7 +8,7 @@ from dftio.data import _keys
 def test_abacus_scf_energy():
     """Test energy extraction for SCF calculation."""
     # Use the existing test data
-    test_data_dir = os.path.join(os.path.dirname(__file__), "data", "abacus")
+    test_data_dir = os.path.join(os.path.dirname(__file__), "data", "abacus_scf")
 
     parser = AbacusParser(
         root=[test_data_dir],
@@ -27,11 +27,11 @@ def test_abacus_scf_energy():
     assert energy.shape == (1,), f"Expected shape (1,), got {energy.shape}"
 
     # Check dtype
-    assert energy.dtype == np.float32, f"Expected dtype float32, got {energy.dtype}"
+    assert energy.dtype == np.float64, f"Expected dtype float64, got {energy.dtype}"
 
     # Check value (from the log file: -1879.7169812 eV)
     expected_energy = -1879.7169812
-    assert np.isclose(energy[0], expected_energy, rtol=1e-5), \
+    assert np.isclose(energy[0], expected_energy, atol=1e-5), \
         f"Expected energy ~{expected_energy}, got {energy[0]}"
 
     print(f"SCF energy extraction test passed: {energy[0]} eV")
@@ -42,7 +42,7 @@ def test_abacus_energy_write_dat():
     import tempfile
     import shutil
 
-    test_data_dir = os.path.join(os.path.dirname(__file__), "data", "abacus")
+    test_data_dir = os.path.join(os.path.dirname(__file__), "data", "abacus_scf")
 
     parser = AbacusParser(
         root=[test_data_dir],
@@ -72,7 +72,7 @@ def test_abacus_energy_write_dat():
         # Load and verify energy
         loaded_energy = np.load(energy_file)
         assert loaded_energy.shape == (1,), f"Expected shape (1,), got {loaded_energy.shape}"
-        assert np.isclose(loaded_energy[0], -1879.7169812, rtol=1e-5), \
+        assert np.isclose(loaded_energy[0], -1879.7169812, atol=1e-5), \
             f"Loaded energy doesn't match expected value"
 
         print(f"DAT format energy write test passed")
@@ -84,7 +84,7 @@ def test_abacus_energy_write_lmdb():
     import lmdb
     import pickle
 
-    test_data_dir = os.path.join(os.path.dirname(__file__), "data", "abacus")
+    test_data_dir = os.path.join(os.path.dirname(__file__), "data", "abacus_scf")
 
     parser = AbacusParser(
         root=[test_data_dir],
@@ -120,7 +120,7 @@ def test_abacus_energy_write_lmdb():
                 f"LMDB data should contain {_keys.TOTAL_ENERGY_KEY}"
 
             energy = data_dict[_keys.TOTAL_ENERGY_KEY]
-            assert np.isclose(energy, -1879.7169812, rtol=1e-5), \
+            assert np.isclose(energy, -1879.7169812, atol=1e-5), \
                 f"LMDB energy doesn't match expected value"
 
         env.close()
