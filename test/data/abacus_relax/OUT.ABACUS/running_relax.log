@@ -1,0 +1,1672 @@
+                                                                                     
+                              ABACUS v3.9.0
+
+               Atomic-orbital Based Ab-initio Computation at UStc                    
+
+                     Website: http://abacus.ustc.edu.cn/                             
+               Documentation: https://abacus.deepmodeling.com/                       
+                  Repository: https://github.com/abacusmodeling/abacus-develop       
+                              https://github.com/deepmodeling/abacus-develop         
+                      Commit: 68735ed (Fri Dec 27 15:05:38 2024 +0800)
+
+    Start Time is Mon Nov  3 10:10:28 2025
+                                                                                     
+ ------------------------------------------------------------------------------------
+
+ READING GENERAL INFORMATION
+                           global_out_dir = OUT.ABACUS/
+                           global_in_card = INPUT
+                               pseudo_dir = ./
+                              orbital_dir = ./
+                                    DRANK = 1
+                                    DSIZE = 32
+                                   DCOLOR = 1
+                                    GRANK = 1
+                                    GSIZE = 1
+
+
+
+
+ >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+ |                                                                    |
+ | Reading atom information in unitcell:                              |
+ | From the input file and the structure file we know the number of   |
+ | different elments in this unitcell, then we list the detail        |
+ | information for each element, especially the zeta and polar atomic |
+ | orbital number for each element. The total atom number is counted. |
+ | We calculate the nearest atom distance for each atom and show the  |
+ | Cartesian and Direct coordinates for each atom. We list the file   |
+ | address for atomic orbitals. The volume and the lattice vectors    |
+ | in real and reciprocal space is also shown.                        |
+ |                                                                    |
+ <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+ READING UNITCELL INFORMATION
+                                    ntype = 1
+                  lattice constant (Bohr) = 15
+              lattice constant (Angstrom) = 7.93766
+
+ READING ATOM TYPE 1
+                               atom label = Si
+                      L=0, number of zeta = 2
+                      L=1, number of zeta = 2
+                      L=2, number of zeta = 1
+             number of atom for this type = 2
+
+                        TOTAL ATOM NUMBER = 2
+CARTESIAN COORDINATES ( UNIT =      15.000000000000 Bohr ).
+    atom                   x                   y                   z     mag                  vx                  vy                  vz
+tauc_Si1            0.0000000000        0.0000000000        0.0000000000  0.0000        0.0000000000        0.0000000000        0.0000000000
+tauc_Si2            0.2800000000        0.0000000000        0.0000000000  0.0000        0.0000000000        0.0000000000        0.0000000000
+
+
+
+                          Volume (Bohr^3) = 3375
+                             Volume (A^3) = 500.123
+
+ Lattice vectors: (Cartesian coordinate: in unit of a_0)
+                   +1                  +0                  +0
+                   +0                  +1                  +0
+                   +0                  +0                  +1
+ Reciprocal vectors: (Cartesian coordinate: in unit of 2 pi/a_0)
+                   +1                  -0                  +0
+                   -0                  +1                  -0
+                   +0                  -0                  +1
+ The esolver type has been set to : ksdft_lcao
+
+ RUNNING WITH DEVICE  : CPU / Intel(R) Xeon(R) Platinum 8457C
+
+
+
+
+ >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+ |                                                                    |
+ | Reading pseudopotentials files:                                    |
+ | The pseudopotential file is in UPF format. The 'NC' indicates that |
+ | the type of pseudopotential is 'norm conserving'. Functional of    |
+ | exchange and correlation is decided by 4 given parameters in UPF   |
+ | file.  We also read in the 'core correction' if there exists.      |
+ | Also we can read the valence electrons number and the maximal      |
+ | angular momentum used in this pseudopotential. We also read in the |
+ | trail wave function, trail atomic density and local-pseudopotential|
+ | on logrithmic grid. The non-local pseudopotential projector is also|
+ | read in if there is any.                                           |
+ |                                                                    |
+ <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+                PAO radial cut off (Bohr) = 15
+
+ Read in pseudopotential file is Si_ONCV_PBE-1.0.upf
+                     pseudopotential type = NC
+          exchange-correlation functional = PBE
+                 nonlocal core correction = 0
+                        valence electrons = 4
+                                     lmax = 1
+                           number of zeta = 0
+                     number of projectors = 4
+                           L of projector = 0
+                           L of projector = 0
+                           L of projector = 1
+                           L of projector = 1
+     initial pseudo atomic orbital number = 0
+
+ SETUP THE ELECTRONS NUMBER
+            electron number of element Si = 4
+      total electron number of element Si = 8
+            AUTOSET number of electrons:  = 8
+                           occupied bands = 4
+                                   NLOCAL = 26
+                                   NBANDS = 16
+                                   NBANDS = 16
+                                   NLOCAL = 26
+
+
+
+
+ >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+ |                                                                    |
+ | Setup plane waves of charge/potential:                             |
+ | Use the energy cutoff and the lattice vectors to generate the      |
+ | dimensions of FFT grid. The number of FFT grid on each processor   |
+ | is 'nrxx'. The number of plane wave basis in reciprocal space is   |
+ | different for charege/potential and wave functions. We also set    |
+ | the 'sticks' for the parallel of FFT. The number of plane waves    |
+ | is 'npw' in each processor.                                        |
+ <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+
+ SETUP THE PLANE WAVE BASIS
+ energy cutoff for charge/potential (unit:Ry) = 240
+            fft grid for charge/potential = [ 75, 75, 75 ]
+                        fft grid division = [ 3, 3, 3 ]
+        big fft grid for charge/potential = [ 25, 25, 25 ]
+                                     nbxx = 625
+                                     nrxx = 16875
+
+ SETUP PLANE WAVES FOR CHARGE/POTENTIAL
+                    number of plane waves = 211657
+                         number of sticks = 4281
+
+ PARALLEL PW FOR CHARGE/POTENTIAL
+     PROC   COLUMNS(POT)             PW
+        1            134           6616
+        2            134           6616
+        3            134           6616
+        4            134           6616
+        5            134           6616
+        6            134           6616
+        7            134           6616
+        8            134           6616
+        9            134           6616
+       10            134           6616
+       11            134           6616
+       12            134           6616
+       13            134           6616
+       14            134           6616
+       15            133           6611
+       16            133           6611
+       17            133           6611
+       18            133           6611
+       19            133           6611
+       20            133           6611
+       21            134           6616
+       22            134           6614
+       23            134           6614
+       24            134           6614
+       25            134           6614
+       26            134           6614
+       27            133           6611
+       28            134           6614
+       29            134           6614
+       30            134           6614
+       31            134           6614
+       32            134           6614
+ --------------- sum -------------------
+       32           4281         211657
+                            number of |g| = 998
+                                  max |g| = 1366
+                                  min |g| = 18
+
+----------- Double Check Mixing Parameters Begin ------------
+mixing_type: broyden
+mixing_beta: 0.8
+mixing_gg0: 1
+mixing_gg0_min: 0.1
+mixing_ndim: 8
+----------- Double Check Mixing Parameters End ------------
+ DONE : SETUP UNITCELL Time : 0.137969 (SEC)
+
+
+
+
+
+ >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+ |                                                                    |
+ | Setup K-points                                                     |
+ | We setup the k-points according to input parameters.               |
+ | The reduced k-points are set according to symmetry operations.     |
+ | We treat the spin as another set of k-points.                      |
+ |                                                                    |
+ <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+
+ SETUP K-POINTS
+                                    nspin = 1
+                   Input type of k points = Monkhorst-Pack(Gamma)
+                                   nkstot = 1
+                               nkstot_ibz = 1
+K-POINTS REDUCTION ACCORDING TO SYMMETRY
+     IBZ    DIRECT_X    DIRECT_Y    DIRECT_Z  WEIGHT  ibz2bz
+       1  0.00000000  0.00000000  0.00000000  1.0000       0
+
+                               nkstot now = 1
+K-POINTS DIRECT COORDINATES
+ KPOINTS    DIRECT_X    DIRECT_Y    DIRECT_Z  WEIGHT
+       1  0.00000000  0.00000000  0.00000000  1.0000
+
+
+           k-point number in this process = 1
+       minimum distributed K point number = 1
+
+K-POINTS CARTESIAN COORDINATES
+ KPOINTS CARTESIAN_X CARTESIAN_Y CARTESIAN_Z  WEIGHT
+       1  0.00000000  0.00000000  0.00000000  2.0000
+
+
+K-POINTS DIRECT COORDINATES
+ KPOINTS    DIRECT_X    DIRECT_Y    DIRECT_Z  WEIGHT
+       1  0.00000000  0.00000000  0.00000000  2.0000
+
+ DONE : INIT K-POINTS Time : 0.154706 (SEC)
+
+
+
+
+
+ >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+ |                                                                    |
+ | Setup plane waves of wave functions:                               |
+ | Use the energy cutoff and the lattice vectors to generate the      |
+ | dimensions of FFT grid. The number of FFT grid on each processor   |
+ | is 'nrxx'. The number of plane wave basis in reciprocal space is   |
+ | different for charege/potential and wave functions. We also set    |
+ | the 'sticks' for the parallel of FFT. The number of plane wave of  |
+ | each k-point is 'npwk[ik]' in each processor                       |
+ <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+
+ SETUP PLANE WAVES FOR WAVE FUNCTIONS
+     energy cutoff for wavefunc (unit:Ry) = 60
+              fft grid for wave functions = [ 75, 75, 75 ]
+                    number of plane waves = 26529
+                         number of sticks = 1085
+
+ PARALLEL PW FOR WAVE FUNCTIONS
+     PROC   COLUMNS(POT)             PW
+        1             33            829
+        2             33            829
+        3             33            829
+        4             34            830
+        5             34            830
+        6             34            830
+        7             34            830
+        8             34            830
+        9             34            830
+       10             34            830
+       11             34            830
+       12             34            828
+       13             34            828
+       14             34            828
+       15             34            828
+       16             34            828
+       17             34            828
+       18             34            828
+       19             34            828
+       20             34            828
+       21             34            828
+       22             34            830
+       23             34            830
+       24             34            830
+       25             34            828
+       26             34            828
+       27             34            828
+       28             34            828
+       29             34            830
+       30             34            830
+       31             34            830
+       32             34            830
+ --------------- sum -------------------
+       32           1085          26529
+ DONE : INIT PLANEWAVE Time : 0.164214 (SEC)
+
+ SET NONLOCAL PSEUDOPOTENTIAL PROJECTORS
+ max number of nonlocal projetors among all species is 4
+ DONE : LOCAL POTENTIAL Time : 0.353004 (SEC)
+
+
+ -------------------------------------------
+ STEP OF RELAXATION : 1
+ -------------------------------------------
+
+
+
+
+ >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+ |                                                                    |
+ | Search adjacent atoms:                                             |
+ | Set the adjacent atoms for each atom and set the periodic boundary |
+ | condition for the atoms on real space FFT grid. For k-dependent    |
+ | algorithm, we also need to set the sparse H and S matrix element   |
+ | for each atom.                                                     |
+ |                                                                    |
+ <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+
+ SETUP SEARCHING RADIUS FOR PROGRAM TO SEARCH ADJACENT ATOMS
+                  longest orb rcut (Bohr) = 8
+   longest nonlocal projector rcut (Bohr) = 3.64
+                     search radius (Bohr) = 16
+              searching radius is (Bohr)) = 16
+         searching radius unit is (Bohr)) = 15
+                         PeriodicBoundary = 1
+                        Radius(unit:lat0) = 1.07
+                                   glayer = [ 3, 3, 3 ]
+                             glayer_minus = [ 2, 2, 2 ]
+
+Find the coordinate range of the input atom(unit:lat0).
+                                  min_tau = [ -2, -2, -2 ]
+                                  max_tau = [ 2.28, 2, 2 ]
+                                BoxNumber = [ 5, 5, 5 ]
+
+ SETUP EXTENDED REAL SPACE GRID FOR GRID INTEGRATION
+                          real space grid = [ 75, 75, 75 ]
+                 big cell numbers in grid = [ 25, 25, 25 ]
+             meshcell numbers in big cell = [ 3, 3, 3 ]
+                        extended fft grid = [ 14, 14, 14 ]
+                dimension of extened grid = [ 54, 54, 54 ]
+                            UnitCellTotal = 27
+              Atom number in sub-FFT-grid = 2
+    Local orbitals number in sub-FFT-grid = 26
+                                 init_chg = atomic
+ DONE : INIT SCF Time : 0.440723 (SEC)
+
+
+ LCAO ALGORITHM --------------- ION=   1  ELEC=   1--------------------------------
+
+K-S equation was solved by genelpa2
+
+eigenvalues were copied to ekb
+
+ Density error is 0.167641878634
+----------------------------------------------------------
+     Energy           Rydberg                 eV          
+----------------------------------------------------------
+ E_KohnSham     -15.2832462294       -207.9392326566      
+ E_Harris       -14.7993884038       -201.3560092071      
+ E_Fermi        -0.3356541926        -4.5668095767        
+----------------------------------------------------------
+
+
+ LCAO ALGORITHM --------------- ION=   1  ELEC=   2--------------------------------
+
+K-S equation was solved by genelpa2
+
+eigenvalues were copied to ekb
+
+ Density error is 0.0881742431062
+----------------------------------------------------------
+     Energy           Rydberg                 eV          
+----------------------------------------------------------
+ E_KohnSham     -15.2881411377       -208.0058313006      
+ E_Harris       -15.2268933213       -207.1725120075      
+ E_Fermi        -0.3026624095        -4.1179333400        
+----------------------------------------------------------
+
+
+ LCAO ALGORITHM --------------- ION=   1  ELEC=   3--------------------------------
+
+K-S equation was solved by genelpa2
+
+eigenvalues were copied to ekb
+
+ Density error is 0.0743629703567
+----------------------------------------------------------
+     Energy           Rydberg                 eV          
+----------------------------------------------------------
+ E_KohnSham     -15.2910849090       -208.0458833638      
+ E_Harris       -15.2645278138       -207.6845555469      
+ E_Fermi        -0.3011903489        -4.0979049274        
+----------------------------------------------------------
+
+
+ LCAO ALGORITHM --------------- ION=   1  ELEC=   4--------------------------------
+
+K-S equation was solved by genelpa2
+
+eigenvalues were copied to ekb
+
+ Density error is 0.0118142447602
+----------------------------------------------------------
+     Energy           Rydberg                 eV          
+----------------------------------------------------------
+ E_KohnSham     -15.2920123880       -208.0585023635      
+ E_Harris       -15.2640809136       -207.6784751586      
+ E_Fermi        -0.3001625472        -4.0839209687        
+----------------------------------------------------------
+
+
+ LCAO ALGORITHM --------------- ION=   1  ELEC=   5--------------------------------
+
+K-S equation was solved by genelpa2
+
+eigenvalues were copied to ekb
+
+ Density error is 0.0103189739598
+----------------------------------------------------------
+     Energy           Rydberg                 eV          
+----------------------------------------------------------
+ E_KohnSham     -15.2920715312       -208.0593070473      
+ E_Harris       -15.2788146010       -207.8789372595      
+ E_Fermi        -0.2983677902        -4.0595020468        
+----------------------------------------------------------
+
+
+ LCAO ALGORITHM --------------- ION=   1  ELEC=   6--------------------------------
+
+K-S equation was solved by genelpa2
+
+eigenvalues were copied to ekb
+
+ Density error is 0.00298955671831
+----------------------------------------------------------
+     Energy           Rydberg                 eV          
+----------------------------------------------------------
+ E_KohnSham     -15.2921224326       -208.0599995975      
+ E_Harris       -15.2854153956       -207.9687456773      
+ E_Fermi        -0.2977463391        -4.0510467708        
+----------------------------------------------------------
+
+
+ LCAO ALGORITHM --------------- ION=   1  ELEC=   7--------------------------------
+
+K-S equation was solved by genelpa2
+
+eigenvalues were copied to ekb
+
+ Density error is 0.00155415121872
+----------------------------------------------------------
+     Energy           Rydberg                 eV          
+----------------------------------------------------------
+ E_KohnSham     -15.2921387391       -208.0602214582      
+ E_Harris       -15.2903467235       -208.0358398351      
+ E_Fermi        -0.2971788740        -4.0433260122        
+----------------------------------------------------------
+
+
+ LCAO ALGORITHM --------------- ION=   1  ELEC=   8--------------------------------
+
+K-S equation was solved by genelpa2
+
+eigenvalues were copied to ekb
+
+ Density error is 0.000300697428591
+----------------------------------------------------------
+     Energy           Rydberg                 eV          
+----------------------------------------------------------
+ E_KohnSham     -15.2921446732       -208.0603021952      
+ E_Harris       -15.2913860137       -208.0499801037      
+ E_Fermi        -0.2970667155        -4.0418000169        
+----------------------------------------------------------
+
+
+ LCAO ALGORITHM --------------- ION=   1  ELEC=   9--------------------------------
+
+K-S equation was solved by genelpa2
+
+eigenvalues were copied to ekb
+
+ Density error is 6.93130842697e-05
+----------------------------------------------------------
+     Energy           Rydberg                 eV          
+----------------------------------------------------------
+ E_KohnSham     -15.2921457995       -208.0603175198      
+ E_Harris       -15.2920291161       -208.0587299607      
+ E_Fermi        -0.2969962142        -4.0408407971        
+----------------------------------------------------------
+
+
+ LCAO ALGORITHM --------------- ION=   1  ELEC=  10--------------------------------
+
+K-S equation was solved by genelpa2
+
+eigenvalues were copied to ekb
+
+ Density error is 1.94272295931e-05
+----------------------------------------------------------
+     Energy           Rydberg                 eV          
+----------------------------------------------------------
+ E_KohnSham     -15.2921458023       -208.0603175581      
+ E_Harris       -15.2921399827       -208.0602383777      
+ E_Fermi        -0.2969832261        -4.0406640859        
+----------------------------------------------------------
+
+
+ LCAO ALGORITHM --------------- ION=   1  ELEC=  11--------------------------------
+
+K-S equation was solved by genelpa2
+
+eigenvalues were copied to ekb
+
+ Density error is 7.16591447214e-06
+----------------------------------------------------------
+     Energy           Rydberg                 eV          
+----------------------------------------------------------
+ E_KohnSham     -15.2921458055       -208.0603176018      
+ E_Harris       -15.2921405102       -208.0602455547      
+ E_Fermi        -0.2969834365        -4.0406669480        
+----------------------------------------------------------
+
+
+ LCAO ALGORITHM --------------- ION=   1  ELEC=  12--------------------------------
+
+K-S equation was solved by genelpa2
+
+eigenvalues were copied to ekb
+
+ Density error is 1.76093063118e-06
+----------------------------------------------------------
+     Energy           Rydberg                 eV          
+----------------------------------------------------------
+ E_KohnSham     -15.2921458083       -208.0603176395      
+ E_Harris       -15.2921429082       -208.0602781815      
+ E_Fermi        -0.2969831522        -4.0406630803        
+----------------------------------------------------------
+
+
+ LCAO ALGORITHM --------------- ION=   1  ELEC=  13--------------------------------
+
+K-S equation was solved by genelpa2
+
+eigenvalues were copied to ekb
+
+ Density error is 5.91339269531e-07
+----------------------------------------------------------
+     Energy           Rydberg                 eV          
+----------------------------------------------------------
+ E_KohnSham     -15.2921458089       -208.0603176474      
+ E_Harris       -15.2921451927       -208.0603092644      
+ E_Fermi        -0.2969828864        -4.0406594636        
+----------------------------------------------------------
+
+
+ LCAO ALGORITHM --------------- ION=   1  ELEC=  14--------------------------------
+
+K-S equation was solved by genelpa2
+
+eigenvalues were copied to ekb
+
+ Density error is 1.89906890648e-07
+----------------------------------------------------------
+     Energy           Rydberg                 eV          
+----------------------------------------------------------
+ E_KohnSham     -15.2921458089       -208.0603176485      
+ E_Harris       -15.2921457686       -208.0603171000      
+ E_Fermi        -0.2969828208        -4.0406585714        
+----------------------------------------------------------
+
+
+ LCAO ALGORITHM --------------- ION=   1  ELEC=  15--------------------------------
+
+K-S equation was solved by genelpa2
+
+eigenvalues were copied to ekb
+
+ Density error is 1.03355323435e-08
+----------------------------------------------------------
+     Energy           Rydberg                 eV          
+----------------------------------------------------------
+ E_KohnSham     -15.2921458090       -208.0603176488      
+ E_KS(sigma->0) -15.2845939406       -207.9575692085      
+ E_Harris       -15.2921458109       -208.0603176748      
+ E_band         -4.0858182240        -55.5904088385       
+ E_one_elec     -15.2605807630       -207.6308531659      
+ E_Hartree      8.3522612628         113.6383443587       
+ E_xc           -4.2738792505        -58.1491103703       
+ E_Ewald        -4.0948433216        -55.7132015906       
+ E_entropy(-TS) -0.0151037367        -0.2054968807        
+ E_descf        0.0000000000         0.0000000000         
+ E_exx          0.0000000000         0.0000000000         
+ E_Fermi        -0.2969828166        -4.0406585141        
+----------------------------------------------------------
+
+
+ charge density convergence is achieved
+ final etot is -208.06031765 eV
+ EFERMI = -4.0406585141 eV
+
+ STATE ENERGY(eV) AND OCCUPATIONS    NSPIN == 1
+ 1/1 kpoint (Cartesian) = 0.0000 0.0000 0.0000 (829 pws)
+       1       -11.7430        2.00000
+       2       -7.88155        2.00000
+       3       -4.11185        1.54068
+       4       -4.06874        1.22966
+       5       -4.06874        1.22966
+       6       -1.10793        0.00000
+       7       -1.10793        0.00000
+       8        3.30923        0.00000
+       9        4.73312        0.00000
+      10        5.62847        0.00000
+      11        6.66342        0.00000
+      12        6.66342        0.00000
+      13        8.48121        0.00000
+      14        8.48794        0.00000
+      15        8.51480        0.00000
+      16        8.51480        0.00000
+
+ correction force for each atom along direction 1 is 4.17158e-10
+ correction force for each atom along direction 2 is 6.24206e-16
+ correction force for each atom along direction 3 is -2.46203e-15
+------------------------------------------------------------------------------------------
+ TOTAL-FORCE (eV/Angstrom)                                                                
+------------------------------------------------------------------------------------------
+                       Si1        -0.3597109134         0.0000000000         0.0000000000 
+                       Si2         0.3597109134         0.0000000000         0.0000000000 
+------------------------------------------------------------------------------------------
+
+
+ Largest gradient in force is 0.359711 eV/A.
+ Threshold is 0.00100000 eV/A.
+
+ Relaxation is not converged yet!
+CARTESIAN COORDINATES ( UNIT =      15.000000000000 Bohr ).
+    atom                   x                   y                   z     mag                  vx                  vy                  vz
+tauc_Si1            0.0000000000        0.0000000000        0.0000000000  0.0000        0.0000000000        0.0000000000        0.0000000000
+tauc_Si2            0.2822658513        0.0000000000        0.0000000000  0.0000        0.0000000000        0.0000000000        0.0000000000
+
+
+
+ -------------------------------------------
+ STEP OF RELAXATION : 2
+ -------------------------------------------
+ NEW-OLD atomic charge density approx. for the potential !
+
+
+
+
+ >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+ |                                                                    |
+ | Search adjacent atoms:                                             |
+ | Set the adjacent atoms for each atom and set the periodic boundary |
+ | condition for the atoms on real space FFT grid. For k-dependent    |
+ | algorithm, we also need to set the sparse H and S matrix element   |
+ | for each atom.                                                     |
+ |                                                                    |
+ <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+
+ SETUP SEARCHING RADIUS FOR PROGRAM TO SEARCH ADJACENT ATOMS
+                  longest orb rcut (Bohr) = 8.00
+   longest nonlocal projector rcut (Bohr) = 3.64
+                     search radius (Bohr) = 16.0
+              searching radius is (Bohr)) = 16.0
+         searching radius unit is (Bohr)) = 15.0
+                         PeriodicBoundary = 1
+                        Radius(unit:lat0) = 1.07
+                                   glayer = [ 3, 3, 3 ]
+                             glayer_minus = [ 2, 2, 2 ]
+
+Find the coordinate range of the input atom(unit:lat0).
+                                  min_tau = [ -2.00, -2.00, -2.00 ]
+                                  max_tau = [ 2.28, 2.00, 2.00 ]
+                                BoxNumber = [ 5, 5, 5 ]
+
+ SETUP EXTENDED REAL SPACE GRID FOR GRID INTEGRATION
+                          real space grid = [ 75, 75, 75 ]
+                 big cell numbers in grid = [ 25, 25, 25 ]
+             meshcell numbers in big cell = [ 3, 3, 3 ]
+                        extended fft grid = [ 14, 14, 14 ]
+                dimension of extened grid = [ 54, 54, 54 ]
+                            UnitCellTotal = 27
+              Atom number in sub-FFT-grid = 2
+    Local orbitals number in sub-FFT-grid = 26
+ DONE : INIT SCF Time : 2.47607 (SEC)
+
+
+ LCAO ALGORITHM --------------- ION=   2  ELEC=   1--------------------------------
+
+K-S equation was solved by genelpa2
+
+eigenvalues were copied to ekb
+
+ Density error is 0.0176135595252
+----------------------------------------------------------
+     Energy           Rydberg                 eV          
+----------------------------------------------------------
+ E_KohnSham     -15.2922454518       -208.0616733595      
+ E_Harris       -15.3031329947       -208.2098059800      
+ E_Fermi        -0.2946555988        -4.0089950913        
+----------------------------------------------------------
+
+
+ LCAO ALGORITHM --------------- ION=   2  ELEC=   2--------------------------------
+
+K-S equation was solved by genelpa2
+
+eigenvalues were copied to ekb
+
+ Density error is 0.0306880072019
+----------------------------------------------------------
+     Energy           Rydberg                 eV          
+----------------------------------------------------------
+ E_KohnSham     -15.2923142258       -208.0626090779      
+ E_Harris       -15.2923399525       -208.0629591066      
+ E_Fermi        -0.2950974006        -4.0150061137        
+----------------------------------------------------------
+
+
+ LCAO ALGORITHM --------------- ION=   2  ELEC=   3--------------------------------
+
+K-S equation was solved by genelpa2
+
+eigenvalues were copied to ekb
+
+ Density error is 0.00159363168950
+----------------------------------------------------------
+     Energy           Rydberg                 eV          
+----------------------------------------------------------
+ E_KohnSham     -15.2925105033       -208.0652795702      
+ E_Harris       -15.2939031582       -208.0842276118      
+ E_Fermi        -0.2952777094        -4.0174593400        
+----------------------------------------------------------
+
+
+ LCAO ALGORITHM --------------- ION=   2  ELEC=   4--------------------------------
+
+K-S equation was solved by genelpa2
+
+eigenvalues were copied to ekb
+
+ Density error is 0.000943667947129
+----------------------------------------------------------
+     Energy           Rydberg                 eV          
+----------------------------------------------------------
+ E_KohnSham     -15.2925106699       -208.0652818369      
+ E_Harris       -15.2930971948       -208.0732619165      
+ E_Fermi        -0.2953752140        -4.0187859587        
+----------------------------------------------------------
+
+
+ LCAO ALGORITHM --------------- ION=   2  ELEC=   5--------------------------------
+
+K-S equation was solved by genelpa2
+
+eigenvalues were copied to ekb
+
+ Density error is 0.000639667572169
+----------------------------------------------------------
+     Energy           Rydberg                 eV          
+----------------------------------------------------------
+ E_KohnSham     -15.2925108683       -208.0652845352      
+ E_Harris       -15.2928156005       -208.0694306302      
+ E_Fermi        -0.2954038476        -4.0191755389        
+----------------------------------------------------------
+
+
+ LCAO ALGORITHM --------------- ION=   2  ELEC=   6--------------------------------
+
+K-S equation was solved by genelpa2
+
+eigenvalues were copied to ekb
+
+ Density error is 0.000376691807474
+----------------------------------------------------------
+     Energy           Rydberg                 eV          
+----------------------------------------------------------
+ E_KohnSham     -15.2925108925       -208.0652848652      
+ E_Harris       -15.2926420486       -208.0670693349      
+ E_Fermi        -0.2954213852        -4.0194141493        
+----------------------------------------------------------
+
+
+ LCAO ALGORITHM --------------- ION=   2  ELEC=   7--------------------------------
+
+K-S equation was solved by genelpa2
+
+eigenvalues were copied to ekb
+
+ Density error is 8.65843391097e-05
+----------------------------------------------------------
+     Energy           Rydberg                 eV          
+----------------------------------------------------------
+ E_KohnSham     -15.2925108634       -208.0652844695      
+ E_Harris       -15.2925357207       -208.0656226702      
+ E_Fermi        -0.2954340821        -4.0195868997        
+----------------------------------------------------------
+
+
+ LCAO ALGORITHM --------------- ION=   2  ELEC=   8--------------------------------
+
+K-S equation was solved by genelpa2
+
+eigenvalues were copied to ekb
+
+ Density error is 4.22122376027e-05
+----------------------------------------------------------
+     Energy           Rydberg                 eV          
+----------------------------------------------------------
+ E_KohnSham     -15.2925108548       -208.0652843517      
+ E_Harris       -15.2925165855       -208.0653623226      
+ E_Fermi        -0.2954357442        -4.0196095146        
+----------------------------------------------------------
+
+
+ LCAO ALGORITHM --------------- ION=   2  ELEC=   9--------------------------------
+
+K-S equation was solved by genelpa2
+
+eigenvalues were copied to ekb
+
+ Density error is 4.97398542175e-06
+----------------------------------------------------------
+     Energy           Rydberg                 eV          
+----------------------------------------------------------
+ E_KohnSham     -15.2925108582       -208.0652843985      
+ E_Harris       -15.2925115516       -208.0652938330      
+ E_Fermi        -0.2954362972        -4.0196170377        
+----------------------------------------------------------
+
+
+ LCAO ALGORITHM --------------- ION=   2  ELEC=  10--------------------------------
+
+K-S equation was solved by genelpa2
+
+eigenvalues were copied to ekb
+
+ Density error is 7.56991397771e-07
+----------------------------------------------------------
+     Energy           Rydberg                 eV          
+----------------------------------------------------------
+ E_KohnSham     -15.2925108587       -208.0652844050      
+ E_Harris       -15.2925111711       -208.0652886553      
+ E_Fermi        -0.2954363299        -4.0196174825        
+----------------------------------------------------------
+
+
+ LCAO ALGORITHM --------------- ION=   2  ELEC=  11--------------------------------
+
+K-S equation was solved by genelpa2
+
+eigenvalues were copied to ekb
+
+ Density error is 2.13220413227e-07
+----------------------------------------------------------
+     Energy           Rydberg                 eV          
+----------------------------------------------------------
+ E_KohnSham     -15.2925108588       -208.0652844071      
+ E_Harris       -15.2925110119       -208.0652864902      
+ E_Fermi        -0.2954363471        -4.0196177163        
+----------------------------------------------------------
+
+
+ LCAO ALGORITHM --------------- ION=   2  ELEC=  12--------------------------------
+
+K-S equation was solved by genelpa2
+
+eigenvalues were copied to ekb
+
+ Density error is 2.60190994519e-08
+----------------------------------------------------------
+     Energy           Rydberg                 eV          
+----------------------------------------------------------
+ E_KohnSham     -15.2925108588       -208.0652844066      
+ E_KS(sigma->0) -15.2850339767       -207.9635562072      
+ E_Harris       -15.2925108868       -208.0652847881      
+ E_band         -4.0752177642        -55.4461821837       
+ E_one_elec     -15.1677111068       -206.3672966704      
+ E_Hartree      8.3075294299         113.0297365491       
+ E_xc           -4.2684463145        -58.0751914839       
+ E_Ewald        -4.1489291033        -56.4490764026       
+ E_entropy(-TS) -0.0149537641        -0.2034563989        
+ E_descf        0.0000000000         0.0000000000         
+ E_exx          0.0000000000         0.0000000000         
+ E_Fermi        -0.2954363619        -4.0196179180        
+----------------------------------------------------------
+
+
+ charge density convergence is achieved
+ final etot is -208.06528441 eV
+ EFERMI = -4.0196179180 eV
+
+ STATE ENERGY(eV) AND OCCUPATIONS    NSPIN == 1
+ 1/1 kpoint (Cartesian) = 0.0000 0.0000 0.0000 (829 pws)
+       1       -11.6917        2.00000
+       2       -7.89958        2.00000
+       3       -4.09775        1.58330
+       4       -4.04503        1.20835
+       5       -4.04503        1.20835
+       6       -1.13606        0.00000
+       7       -1.13606        0.00000
+       8        3.22908        0.00000
+       9        4.75035        0.00000
+      10        5.63390        0.00000
+      11        6.71850        0.00000
+      12        6.71850        0.00000
+      13        8.48873        0.00000
+      14        8.48873        0.00000
+      15        8.51192        0.00000
+      16        8.51855        0.00000
+
+ correction force for each atom along direction 1 is -1.80031e-05
+ correction force for each atom along direction 2 is -5.91104e-16
+ correction force for each atom along direction 3 is 6.44490e-16
+------------------------------------------------------------------------------------------
+ TOTAL-FORCE (eV/Angstrom)                                                                
+------------------------------------------------------------------------------------------
+                       Si1        -0.1948009891         0.0000000000         0.0000000000 
+                       Si2         0.1948009891         0.0000000000         0.0000000000 
+------------------------------------------------------------------------------------------
+
+
+ Largest gradient in force is 0.194801 eV/A.
+ Threshold is 0.00100000 eV/A.
+
+ Relaxation is not converged yet!
+CARTESIAN COORDINATES ( UNIT =      15.000000000000 Bohr ).
+    atom                   x                   y                   z     mag                  vx                  vy                  vz
+tauc_Si1            0.0000000000        0.0000000000        0.0000000000  0.0000        0.0000000000        0.0000000000        0.0000000000
+tauc_Si2            0.2852148242        0.0000000000        0.0000000000  0.0000        0.0000000000        0.0000000000        0.0000000000
+
+
+
+ -------------------------------------------
+ STEP OF RELAXATION : 3
+ -------------------------------------------
+ first order charge density extrapolation !
+
+
+
+
+ >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+ |                                                                    |
+ | Search adjacent atoms:                                             |
+ | Set the adjacent atoms for each atom and set the periodic boundary |
+ | condition for the atoms on real space FFT grid. For k-dependent    |
+ | algorithm, we also need to set the sparse H and S matrix element   |
+ | for each atom.                                                     |
+ |                                                                    |
+ <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+
+ SETUP SEARCHING RADIUS FOR PROGRAM TO SEARCH ADJACENT ATOMS
+                  longest orb rcut (Bohr) = 8.00
+   longest nonlocal projector rcut (Bohr) = 3.64
+                     search radius (Bohr) = 16.0
+              searching radius is (Bohr)) = 16.0
+         searching radius unit is (Bohr)) = 15.0
+                         PeriodicBoundary = 1
+                        Radius(unit:lat0) = 1.07
+                                   glayer = [ 3, 3, 3 ]
+                             glayer_minus = [ 2, 2, 2 ]
+
+Find the coordinate range of the input atom(unit:lat0).
+                                  min_tau = [ -2.00, -2.00, -2.00 ]
+                                  max_tau = [ 2.29, 2.00, 2.00 ]
+                                BoxNumber = [ 5, 5, 5 ]
+
+ SETUP EXTENDED REAL SPACE GRID FOR GRID INTEGRATION
+                          real space grid = [ 75, 75, 75 ]
+                 big cell numbers in grid = [ 25, 25, 25 ]
+             meshcell numbers in big cell = [ 3, 3, 3 ]
+                        extended fft grid = [ 14, 14, 14 ]
+                dimension of extened grid = [ 54, 54, 54 ]
+                            UnitCellTotal = 27
+              Atom number in sub-FFT-grid = 2
+    Local orbitals number in sub-FFT-grid = 26
+ DONE : INIT SCF Time : 9.37518 (SEC)
+
+
+ LCAO ALGORITHM --------------- ION=   3  ELEC=   1--------------------------------
+
+K-S equation was solved by genelpa2
+
+eigenvalues were copied to ekb
+
+ Density error is 0.00387372227648
+----------------------------------------------------------
+     Energy           Rydberg                 eV          
+----------------------------------------------------------
+ E_KohnSham     -15.2926590226       -208.0673002781      
+ E_Harris       -15.2948058995       -208.0965100367      
+ E_Fermi        -0.2932016765        -3.9892134638        
+----------------------------------------------------------
+
+
+ LCAO ALGORITHM --------------- ION=   3  ELEC=   2--------------------------------
+
+K-S equation was solved by genelpa2
+
+eigenvalues were copied to ekb
+
+ Density error is 0.00582128631025
+----------------------------------------------------------
+     Energy           Rydberg                 eV          
+----------------------------------------------------------
+ E_KohnSham     -15.2926636401       -208.0673631024      
+ E_Harris       -15.2931148482       -208.0735021036      
+ E_Fermi        -0.2933151517        -3.9907573734        
+----------------------------------------------------------
+
+
+ LCAO ALGORITHM --------------- ION=   3  ELEC=   3--------------------------------
+
+K-S equation was solved by genelpa2
+
+eigenvalues were copied to ekb
+
+ Density error is 0.000444768628873
+----------------------------------------------------------
+     Energy           Rydberg                 eV          
+----------------------------------------------------------
+ E_KohnSham     -15.2926708328       -208.0674609640      
+ E_Harris       -15.2930454576       -208.0725579964      
+ E_Fermi        -0.2933466250        -3.9911855894        
+----------------------------------------------------------
+
+
+ LCAO ALGORITHM --------------- ION=   3  ELEC=   4--------------------------------
+
+K-S equation was solved by genelpa2
+
+eigenvalues were copied to ekb
+
+ Density error is 0.000203329237401
+----------------------------------------------------------
+     Energy           Rydberg                 eV          
+----------------------------------------------------------
+ E_KohnSham     -15.2926708588       -208.0674613183      
+ E_Harris       -15.2927722165       -208.0688403610      
+ E_Fermi        -0.2933761874        -3.9915878062        
+----------------------------------------------------------
+
+
+ LCAO ALGORITHM --------------- ION=   3  ELEC=   5--------------------------------
+
+K-S equation was solved by genelpa2
+
+eigenvalues were copied to ekb
+
+ Density error is 0.000128340950941
+----------------------------------------------------------
+     Energy           Rydberg                 eV          
+----------------------------------------------------------
+ E_KohnSham     -15.2926708527       -208.0674612355      
+ E_Harris       -15.2927100881       -208.0679950601      
+ E_Fermi        -0.2933821345        -3.9916687204        
+----------------------------------------------------------
+
+
+ LCAO ALGORITHM --------------- ION=   3  ELEC=   6--------------------------------
+
+K-S equation was solved by genelpa2
+
+eigenvalues were copied to ekb
+
+ Density error is 8.31097204257e-05
+----------------------------------------------------------
+     Energy           Rydberg                 eV          
+----------------------------------------------------------
+ E_KohnSham     -15.2926708549       -208.0674612647      
+ E_Harris       -15.2926906151       -208.0677301158      
+ E_Fermi        -0.2933840547        -3.9916948458        
+----------------------------------------------------------
+
+
+ LCAO ALGORITHM --------------- ION=   3  ELEC=   7--------------------------------
+
+K-S equation was solved by genelpa2
+
+eigenvalues were copied to ekb
+
+ Density error is 2.37788059151e-05
+----------------------------------------------------------
+     Energy           Rydberg                 eV          
+----------------------------------------------------------
+ E_KohnSham     -15.2926708502       -208.0674612018      
+ E_Harris       -15.2926734717       -208.0674968687      
+ E_Fermi        -0.2933858783        -3.9917196570        
+----------------------------------------------------------
+
+
+ LCAO ALGORITHM --------------- ION=   3  ELEC=   8--------------------------------
+
+K-S equation was solved by genelpa2
+
+eigenvalues were copied to ekb
+
+ Density error is 1.07098071371e-05
+----------------------------------------------------------
+     Energy           Rydberg                 eV          
+----------------------------------------------------------
+ E_KohnSham     -15.2926708468       -208.0674611545      
+ E_Harris       -15.2926707283       -208.0674595432      
+ E_Fermi        -0.2933860642        -3.9917221865        
+----------------------------------------------------------
+
+
+ LCAO ALGORITHM --------------- ION=   3  ELEC=   9--------------------------------
+
+K-S equation was solved by genelpa2
+
+eigenvalues were copied to ekb
+
+ Density error is 1.28226657960e-06
+----------------------------------------------------------
+     Energy           Rydberg                 eV          
+----------------------------------------------------------
+ E_KohnSham     -15.2926708432       -208.0674611055      
+ E_Harris       -15.2926705989       -208.0674577828      
+ E_Fermi        -0.2933860565        -3.9917220818        
+----------------------------------------------------------
+
+
+ LCAO ALGORITHM --------------- ION=   3  ELEC=  10--------------------------------
+
+K-S equation was solved by genelpa2
+
+eigenvalues were copied to ekb
+
+ Density error is 1.54880098760e-07
+----------------------------------------------------------
+     Energy           Rydberg                 eV          
+----------------------------------------------------------
+ E_KohnSham     -15.2926708433       -208.0674611076      
+ E_Harris       -15.2926708382       -208.0674610375      
+ E_Fermi        -0.2933860168        -3.9917215421        
+----------------------------------------------------------
+
+
+ LCAO ALGORITHM --------------- ION=   3  ELEC=  11--------------------------------
+
+K-S equation was solved by genelpa2
+
+eigenvalues were copied to ekb
+
+ Density error is 6.45673994404e-08
+----------------------------------------------------------
+     Energy           Rydberg                 eV          
+----------------------------------------------------------
+ E_KohnSham     -15.2926708433       -208.0674611080      
+ E_KS(sigma->0) -15.2853099219       -207.9673106334      
+ E_Harris       -15.2926708432       -208.0674611055      
+ E_band         -4.0614201946        -55.2584566182       
+ E_one_elec     -15.0493119793       -204.7563938978      
+ E_Hartree      8.2506706057         112.2561325592       
+ E_xc           -4.2615629865        -57.9815390016       
+ E_Ewald        -4.2177446404        -57.3853598185       
+ E_entropy(-TS) -0.0147218430        -0.2003009493        
+ E_descf        0.0000000000         0.0000000000         
+ E_exx          0.0000000000         0.0000000000         
+ E_Fermi        -0.2933860172        -3.9917215470        
+----------------------------------------------------------
+
+
+ charge density convergence is achieved
+ final etot is -208.06746111 eV
+ EFERMI = -3.9917215470 eV
+
+ STATE ENERGY(eV) AND OCCUPATIONS    NSPIN == 1
+ 1/1 kpoint (Cartesian) = 0.0000 0.0000 0.0000 (829 pws)
+       1       -11.6248        2.00000
+       2       -7.92326        2.00000
+       3       -4.07920        1.63679
+       4       -4.01381        1.18161
+       5       -4.01381        1.18161
+       6       -1.17178        0.00000
+       7       -1.17178        0.00000
+       8        3.12588        0.00000
+       9        4.77579        0.00000
+      10        5.64039        0.00000
+      11        6.79087        0.00000
+      12        6.79087        0.00000
+      13        8.45562        0.00000
+      14        8.45562        0.00000
+      15        8.55162        0.00000
+      16        8.55810        0.00000
+
+ correction force for each atom along direction 1 is -3.90331e-05
+ correction force for each atom along direction 2 is 9.86078e-16
+ correction force for each atom along direction 3 is -1.61325e-15
+------------------------------------------------------------------------------------------
+ TOTAL-FORCE (eV/Angstrom)                                                                
+------------------------------------------------------------------------------------------
+                       Si1         0.0049750846         0.0000000000         0.0000000000 
+                       Si2        -0.0049750846         0.0000000000         0.0000000000 
+------------------------------------------------------------------------------------------
+
+
+ Largest gradient in force is 0.00497508 eV/A.
+ Threshold is 0.00100000 eV/A.
+
+ Relaxation is not converged yet!
+CARTESIAN COORDINATES ( UNIT =      15.000000000000 Bohr ).
+    atom                   x                   y                   z     mag                  vx                  vy                  vz
+tauc_Si1            0.0000000000        0.0000000000        0.0000000000  0.0000        0.0000000000        0.0000000000        0.0000000000
+tauc_Si2            0.2851413851        0.0000000000        0.0000000000  0.0000        0.0000000000        0.0000000000        0.0000000000
+
+
+
+ -------------------------------------------
+ STEP OF RELAXATION : 4
+ -------------------------------------------
+ first order charge density extrapolation !
+
+
+
+
+ >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+ |                                                                    |
+ | Search adjacent atoms:                                             |
+ | Set the adjacent atoms for each atom and set the periodic boundary |
+ | condition for the atoms on real space FFT grid. For k-dependent    |
+ | algorithm, we also need to set the sparse H and S matrix element   |
+ | for each atom.                                                     |
+ |                                                                    |
+ <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+
+ SETUP SEARCHING RADIUS FOR PROGRAM TO SEARCH ADJACENT ATOMS
+                  longest orb rcut (Bohr) = 8.00
+   longest nonlocal projector rcut (Bohr) = 3.64
+                     search radius (Bohr) = 16.0
+              searching radius is (Bohr)) = 16.0
+         searching radius unit is (Bohr)) = 15.0
+                         PeriodicBoundary = 1
+                        Radius(unit:lat0) = 1.07
+                                   glayer = [ 3, 3, 3 ]
+                             glayer_minus = [ 2, 2, 2 ]
+
+Find the coordinate range of the input atom(unit:lat0).
+                                  min_tau = [ -2.00, -2.00, -2.00 ]
+                                  max_tau = [ 2.29, 2.00, 2.00 ]
+                                BoxNumber = [ 5, 5, 5 ]
+
+ SETUP EXTENDED REAL SPACE GRID FOR GRID INTEGRATION
+                          real space grid = [ 75, 75, 75 ]
+                 big cell numbers in grid = [ 25, 25, 25 ]
+             meshcell numbers in big cell = [ 3, 3, 3 ]
+                        extended fft grid = [ 14, 14, 14 ]
+                dimension of extened grid = [ 54, 54, 54 ]
+                            UnitCellTotal = 27
+              Atom number in sub-FFT-grid = 2
+    Local orbitals number in sub-FFT-grid = 26
+ DONE : INIT SCF Time : 10.3619 (SEC)
+
+
+ LCAO ALGORITHM --------------- ION=   4  ELEC=   1--------------------------------
+
+K-S equation was solved by genelpa2
+
+eigenvalues were copied to ekb
+
+ Density error is 0.0229370727803
+----------------------------------------------------------
+     Energy           Rydberg                 eV          
+----------------------------------------------------------
+ E_KohnSham     -15.2922235100       -208.0613748249      
+ E_Harris       -15.2803947512       -207.9004363059      
+ E_Fermi        -0.2943689156        -4.0050945658        
+----------------------------------------------------------
+
+
+ LCAO ALGORITHM --------------- ION=   4  ELEC=   2--------------------------------
+
+K-S equation was solved by genelpa2
+
+eigenvalues were copied to ekb
+
+ Density error is 0.0337484352598
+----------------------------------------------------------
+     Energy           Rydberg                 eV          
+----------------------------------------------------------
+ E_KohnSham     -15.2924584635       -208.0645715313      
+ E_Harris       -15.2913942965       -208.0500927974      
+ E_Fermi        -0.2936883210        -3.9958346019        
+----------------------------------------------------------
+
+
+ LCAO ALGORITHM --------------- ION=   4  ELEC=   3--------------------------------
+
+K-S equation was solved by genelpa2
+
+eigenvalues were copied to ekb
+
+ Density error is 0.00423509064706
+----------------------------------------------------------
+     Energy           Rydberg                 eV          
+----------------------------------------------------------
+ E_KohnSham     -15.2926654452       -208.0673876629      
+ E_Harris       -15.2907808323       -208.0417461887      
+ E_Fermi        -0.2936425736        -3.9952121759        
+----------------------------------------------------------
+
+
+ LCAO ALGORITHM --------------- ION=   4  ELEC=   4--------------------------------
+
+K-S equation was solved by genelpa2
+
+eigenvalues were copied to ekb
+
+ Density error is 0.000999368499488
+----------------------------------------------------------
+     Energy           Rydberg                 eV          
+----------------------------------------------------------
+ E_KohnSham     -15.2926696353       -208.0674446718      
+ E_Harris       -15.2921451599       -208.0603088172      
+ E_Fermi        -0.2934887489        -3.9931192845        
+----------------------------------------------------------
+
+
+ LCAO ALGORITHM --------------- ION=   4  ELEC=   5--------------------------------
+
+K-S equation was solved by genelpa2
+
+eigenvalues were copied to ekb
+
+ Density error is 0.000510249868125
+----------------------------------------------------------
+     Energy           Rydberg                 eV          
+----------------------------------------------------------
+ E_KohnSham     -15.2926702698       -208.0674533038      
+ E_Harris       -15.2923550275       -208.0631642131      
+ E_Fermi        -0.2934682186        -3.9928399543        
+----------------------------------------------------------
+
+
+ LCAO ALGORITHM --------------- ION=   4  ELEC=   6--------------------------------
+
+K-S equation was solved by genelpa2
+
+eigenvalues were copied to ekb
+
+ Density error is 0.000471313859030
+----------------------------------------------------------
+     Energy           Rydberg                 eV          
+----------------------------------------------------------
+ E_KohnSham     -15.2926707356       -208.0674596419      
+ E_Harris       -15.2925093092       -208.0652633229      
+ E_Fermi        -0.2934537770        -3.9926434665        
+----------------------------------------------------------
+
+
+ LCAO ALGORITHM --------------- ION=   4  ELEC=   7--------------------------------
+
+K-S equation was solved by genelpa2
+
+eigenvalues were copied to ekb
+
+ Density error is 0.000114614336550
+----------------------------------------------------------
+     Energy           Rydberg                 eV          
+----------------------------------------------------------
+ E_KohnSham     -15.2926709243       -208.0674622099      
+ E_Harris       -15.2926327925       -208.0669434001      
+ E_Fermi        -0.2934413908        -3.9924749442        
+----------------------------------------------------------
+
+
+ LCAO ALGORITHM --------------- ION=   4  ELEC=   8--------------------------------
+
+K-S equation was solved by genelpa2
+
+eigenvalues were copied to ekb
+
+ Density error is 5.01205939470e-05
+----------------------------------------------------------
+     Energy           Rydberg                 eV          
+----------------------------------------------------------
+ E_KohnSham     -15.2926709798       -208.0674629649      
+ E_Harris       -15.2926637465       -208.0673645504      
+ E_Fermi        -0.2934380539        -3.9924295433        
+----------------------------------------------------------
+
+
+ LCAO ALGORITHM --------------- ION=   4  ELEC=   9--------------------------------
+
+K-S equation was solved by genelpa2
+
+eigenvalues were copied to ekb
+
+ Density error is 1.99646157444e-05
+----------------------------------------------------------
+     Energy           Rydberg                 eV          
+----------------------------------------------------------
+ E_KohnSham     -15.2926709789       -208.0674629523      
+ E_Harris       -15.2926695900       -208.0674440558      
+ E_Fermi        -0.2934376587        -3.9924241662        
+----------------------------------------------------------
+
+
+ LCAO ALGORITHM --------------- ION=   4  ELEC=  10--------------------------------
+
+K-S equation was solved by genelpa2
+
+eigenvalues were copied to ekb
+
+ Density error is 3.76012500723e-06
+----------------------------------------------------------
+     Energy           Rydberg                 eV          
+----------------------------------------------------------
+ E_KohnSham     -15.2926709772       -208.0674629293      
+ E_Harris       -15.2926710107       -208.0674633849      
+ E_Fermi        -0.2934375142        -3.9924222000        
+----------------------------------------------------------
+
+
+ LCAO ALGORITHM --------------- ION=   4  ELEC=  11--------------------------------
+
+K-S equation was solved by genelpa2
+
+eigenvalues were copied to ekb
+
+ Density error is 5.72714166382e-07
+----------------------------------------------------------
+     Energy           Rydberg                 eV          
+----------------------------------------------------------
+ E_KohnSham     -15.2926709769       -208.0674629252      
+ E_Harris       -15.2926707794       -208.0674602378      
+ E_Fermi        -0.2934375466        -3.9924226412        
+----------------------------------------------------------
+
+
+ LCAO ALGORITHM --------------- ION=   4  ELEC=  12--------------------------------
+
+K-S equation was solved by genelpa2
+
+eigenvalues were copied to ekb
+
+ Density error is 6.70927351192e-08
+----------------------------------------------------------
+     Energy           Rydberg                 eV          
+----------------------------------------------------------
+ E_KohnSham     -15.2926709768       -208.0674629244      
+ E_KS(sigma->0) -15.2853069294       -207.9672699183      
+ E_Harris       -15.2926709404       -208.0674624283      
+ E_band         -4.0617631414        -55.2631226498       
+ E_one_elec     -15.0522274212       -204.7960605207      
+ E_Hartree      8.2520688669         112.2751568782       
+ E_xc           -4.2617321260        -57.9838402627       
+ E_Ewald        -4.2160522016        -57.3623330070       
+ E_entropy(-TS) -0.0147280950        -0.2003860122        
+ E_descf        0.0000000000         0.0000000000         
+ E_exx          0.0000000000         0.0000000000         
+ E_Fermi        -0.2934375266        -3.9924223688        
+----------------------------------------------------------
+
+
+ charge density convergence is achieved
+ final etot is -208.06746292 eV
+ EFERMI = -3.9924223688 eV
+
+ STATE ENERGY(eV) AND OCCUPATIONS    NSPIN == 1
+ 1/1 kpoint (Cartesian) = 0.0000 0.0000 0.0000 (829 pws)
+       1       -11.6265        2.00000
+       2       -7.92266        2.00000
+       3       -4.07966        1.63548
+       4       -4.01459        1.18226
+       5       -4.01459        1.18226
+       6       -1.17090        0.00000
+       7       -1.17090        0.00000
+       8        3.12844        0.00000
+       9        4.77511        0.00000
+      10        5.64023        0.00000
+      11        6.78906        0.00000
+      12        6.78906        0.00000
+      13        8.45643        0.00000
+      14        8.45643        0.00000
+      15        8.55064        0.00000
+      16        8.55712        0.00000
+
+ correction force for each atom along direction 1 is -3.86886e-05
+ correction force for each atom along direction 2 is 9.50420e-16
+ correction force for each atom along direction 3 is 7.98224e-16
+------------------------------------------------------------------------------------------
+ TOTAL-FORCE (eV/Angstrom)                                                                
+------------------------------------------------------------------------------------------
+                       Si1         0.0001985848         0.0000000000         0.0000000000 
+                       Si2        -0.0001985848         0.0000000000         0.0000000000 
+------------------------------------------------------------------------------------------
+
+
+ Largest gradient in force is 0.000198585 eV/A.
+ Threshold is 0.00100000 eV/A.
+
+ Relaxation is converged!
+
+
+ --------------------------------------------
+ !FINAL_ETOT_IS -208.0674629243840 eV
+ --------------------------------------------
+
+
+TIME STATISTICS
+----------------------------------------------------------------------------------------
+      CLASS_NAME                      NAME                TIME/s  CALLS   AVG/s  PER/%  
+----------------------------------------------------------------------------------------
+                       total                              11.29  17       0.66   100.00 
+ Driver                reading                            0.07   1        0.07   0.62   
+ Input_Conv            Convert                            0.00   1        0.00   0.00   
+ Driver                driver_line                        11.22  1        11.22  99.37  
+ UnitCell              check_tau                          0.00   1        0.00   0.00   
+ ESolver_KS_LCAO       before_all_runners                 0.26   1        0.26   2.29   
+ PW_Basis_Sup          setuptransform                     0.02   1        0.02   0.15   
+ PW_Basis_Sup          distributeg                        0.01   1        0.01   0.05   
+ mymath                heapsort                           0.00   3        0.00   0.02   
+ Charge_Mixing         init_mixing                        0.00   1        0.00   0.00   
+ PW_Basis_K            setuptransform                     0.00   1        0.00   0.03   
+ PW_Basis_K            distributeg                        0.00   1        0.00   0.03   
+ PW_Basis              setup_struc_factor                 0.00   4        0.00   0.03   
+ NOrbital_Lm           extra_uniform                      0.04   5        0.01   0.32   
+ Mathzone_Add1         SplineD2                           0.00   5        0.00   0.00   
+ Mathzone_Add1         Cubic_Spline_Interpolation         0.00   5        0.00   0.02   
+ Mathzone_Add1         Uni_Deriv_Phi                      0.03   5        0.01   0.28   
+ ppcell_vl             init_vloc                          0.01   1        0.01   0.10   
+ Ions                  opt_ions                           10.93  1        10.93  96.75  
+ ESolver_KS_LCAO       runner                             10.59  4        2.65   93.77  
+ ESolver_KS_LCAO       before_scf                         0.24   4        0.06   2.12   
+ atom_arrange          search                             0.00   4        0.00   0.00   
+ atom_arrange          grid_d.init                        0.00   4        0.00   0.00   
+ Grid                  Construct_Adjacent_expand          0.00   4        0.00   0.00   
+ Grid                  Construct_Adjacent_expand_periodic 0.00   8        0.00   0.00   
+ Grid_Technique        init                               0.09   4        0.02   0.79   
+ Grid_BigCell          grid_expansion_index               0.03   8        0.00   0.30   
+ Grid_Driver           Find_atom                          0.00   80       0.00   0.00   
+ Record_adj            for_2d                             0.00   4        0.00   0.00   
+ LCAO_domain           grid_prepare                       0.00   4        0.00   0.00   
+ OverlapNew            initialize_SR                      0.00   4        0.00   0.00   
+ EkineticNew           initialize_HR                      0.00   4        0.00   0.00   
+ NonlocalNew           initialize_HR                      0.00   4        0.00   0.00   
+ Veff                  initialize_HR                      0.00   4        0.00   0.00   
+ Charge                set_rho_core                       0.00   4        0.00   0.00   
+ Charge                atomic_rho                         0.11   8        0.01   0.98   
+ PW_Basis_Sup          recip2real                         0.22   328      0.00   1.96   
+ PW_Basis_Sup          gathers_scatterp                   0.12   328      0.00   1.10   
+ Potential             init_pot                           0.08   4        0.02   0.72   
+ Potential             update_from_charge                 0.83   54       0.02   7.39   
+ Potential             cal_fixed_v                        0.01   4        0.00   0.06   
+ PotLocal              cal_fixed_v                        0.01   4        0.00   0.06   
+ Potential             cal_v_eff                          0.83   54       0.02   7.32   
+ H_Hartree_pw          v_hartree                          0.08   54       0.00   0.71   
+ PW_Basis_Sup          real2recip                         0.25   382      0.00   2.23   
+ PW_Basis_Sup          gatherp_scatters                   0.15   382      0.00   1.30   
+ PotXC                 cal_v_eff                          0.74   54       0.01   6.57   
+ XC_Functional         v_xc                               0.74   54       0.01   6.55   
+ Potential             interpolate_vrs                    0.00   54       0.00   0.01   
+ H_Ewald_pw            compute_ewald                      0.00   4        0.00   0.02   
+ HSolverLCAO           solve                              1.09   50       0.02   9.70   
+ HamiltLCAO            updateHk                           0.41   50       0.01   3.64   
+ OperatorLCAO          init                               0.41   150      0.00   3.60   
+ OverlapNew            calculate_SR                       0.00   4        0.00   0.02   
+ OverlapNew            contributeHk                       0.00   4        0.00   0.00   
+ EkineticNew           contributeHR                       0.00   50       0.00   0.02   
+ EkineticNew           calculate_HR                       0.00   4        0.00   0.02   
+ NonlocalNew           contributeHR                       0.00   50       0.00   0.02   
+ NonlocalNew           calculate_HR                       0.00   4        0.00   0.02   
+ Veff                  contributeHR                       0.40   50       0.01   3.58   
+ Gint_interface        cal_gint                           0.90   104      0.01   7.96   
+ Gint_interface        cal_gint_vlocal                    0.37   50       0.01   3.31   
+ Gint_Tools            cal_psir_ylm                       0.33   61400    0.00   2.93   
+ Gint_Gamma            transfer_pvpR                      0.03   50       0.00   0.26   
+ OperatorLCAO          contributeHk                       0.00   50       0.00   0.00   
+ HSolverLCAO           hamiltSolvePsiK                    0.17   50       0.00   1.47   
+ OperatorLCAO          get_hs_pointers                    0.00   54       0.00   0.00   
+ DiagoElpa             elpa_solve                         0.13   50       0.00   1.13   
+ elecstate             cal_dm                             0.02   54       0.00   0.14   
+ psiMulPsiMpi          pdgemm                             0.02   54       0.00   0.14   
+ DensityMatrix         cal_DMR                            0.00   53       0.00   0.00   
+ ElecStateLCAO         psiToRho                           0.50   50       0.01   4.42   
+ Gint                  transfer_DMR                       0.02   50       0.00   0.18   
+ Gint_interface        cal_gint_rho                       0.46   50       0.01   4.09   
+ Charge_Mixing         get_drho                           0.00   50       0.00   0.02   
+ Charge                mix_rho                            0.11   46       0.00   0.96   
+ Charge                Broyden_mixing                     0.02   46       0.00   0.19   
+ ESolver_KS_LCAO       after_scf                          8.35   4        2.09   73.89  
+ ModuleIO              write_rhog                         8.29   4        2.07   73.37  
+ ESolver_KS_LCAO       out_deepks_labels                  0.00   4        0.00   0.00   
+ LCAO_Deepks_Interface out_deepks_labels                  7.69   2        3.84   68.08  
+ ESolver_KS_LCAO       cal_force                          0.13   4        0.03   1.14   
+ Force_Stress_LCAO     getForceStress                     0.13   4        0.03   1.13   
+ Forces                cal_force_loc                      0.00   4        0.00   0.04   
+ Forces                cal_force_ew                       0.00   4        0.00   0.02   
+ Forces                cal_force_cc                       0.00   4        0.00   0.00   
+ Forces                cal_force_scc                      0.05   4        0.01   0.42   
+ Force_LCAO            ftable                             0.07   4        0.02   0.62   
+ Force_LCAO            allocate                           0.00   4        0.00   0.04   
+ LCAO_domain           build_ST_new                       0.00   8        0.00   0.04   
+ Force_LCAO            cal_pulay_fs_center2               0.00   8        0.00   0.00   
+ Gint_interface        cal_gint_force                     0.06   4        0.02   0.56   
+ Gint_Tools            cal_dpsir_ylm                      0.04   2456     0.00   0.33   
+ NonlocalNew           cal_force_stress                   0.00   4        0.00   0.02   
+ Charge_Extra          extrapolate_charge                 0.04   3        0.01   0.34   
+ ESolver_KS_LCAO       after_all_runners                  0.01   1        0.01   0.07   
+ ModuleIO              write_istate_info                  0.01   1        0.01   0.07   
+----------------------------------------------------------------------------------------
+
+
+ NAME-------------------------|MEMORY(MB)--------
+                         total          157.6
+               GT::ind_bigcell          19.22
+               GT::index2ucell          15.03
+              GT::index2normal          15.02
+         GT::in_this_processor          15.02
+       TwoCenterTable: Kinetic          13.93
+       TwoCenterTable: Overlap          13.93
+      TwoCenterTable: Nonlocal          10.39
+                  meshball_pos          7.721
+                    index_ball          5.492
+            GT::how_many_atoms          4.264
+      GT::bigcell_on_processor          3.754
+                  SF::strucFac          3.230
+              Pot::veff_smooth          3.223
+                     Pot::veff          3.221
+                 Pot::veff_fix          3.219
+                      Chg::rho          3.219
+                 Chg::rho_save          3.219
+                 Chg::rho_core          3.219
+                  meshcell_pos          2.177
+                     Chg::rhog          1.615
+                Chg::rhog_save          1.615
+                Chg::rhog_core          1.615
+                 GT::start_ind          1.111
+ -------------   < 1.0 MB has been ignored ----------------
+ ----------------------------------------------------------
+
+ Start  Time  : Mon Nov  3 10:10:28 2025
+ Finish Time  : Mon Nov  3 10:10:39 2025
+ Total  Time  : 0 h 0 mins 11 secs 
