@@ -414,7 +414,8 @@ class AbacusParser(Parser):
 
         return block_lefts @ mat @ block_rights.T
 
-    def _extract_energy_from_log(self, loglines, mode, nframes=None, dump_freq=1):
+    @staticmethod
+    def _extract_energy_from_log(loglines, mode, dump_freq=1):
         """
         Extract total energy from ABACUS log file.
 
@@ -541,14 +542,8 @@ class AbacusParser(Parser):
                             dump_freq = int(line.split()[1])
                             break
 
-        # Get number of frames from dpdata system
-        nframes = None
-        if mode in ["md", "relax"]:
-            sys = self.raw_sys[idx]
-            nframes = sys.get_nframes()
-
         # Extract energy
-        energy = self._extract_energy_from_log(loglines, mode, nframes, dump_freq)
+        energy = self._extract_energy_from_log(loglines, mode, dump_freq)
 
         if energy is None:
             return None
