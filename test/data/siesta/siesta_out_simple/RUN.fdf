@@ -1,0 +1,117 @@
+#SpinOrbit                .true.
+#NonCollinearSpin         .true.
+#SpinPolarized            .true.
+
+
+SystemName          1Au           # Descriptive name of the system
+SystemLabel        Au_cell          # Short name for naming files
+
+# Output options
+
+
+# Species and atoms
+
+
+%block ChemicalSpeciesLabel 
+  1  79  Au
+%endblock ChemicalSpeciesLabel
+
+%block Ps.lmax
+  Au   3
+%endblock Ps.lmax
+# Basis
+
+
+%block PAO.Basis
+Au     3     0.025                  # Species label, number of l-shells
+ n=6   0   2    E  99.0 3.76
+   6.520  4.180
+   1.000  1.000
+ n=6   1   1    E  54.3 3.96
+   6.90
+   1.000
+ n=5   2   2    E  54.3 4.11                       # n, l, Nzeta
+   6.180   2.350
+   1.000   1.000
+%endblock PAO.Basis
+
+
+### Basis
+#PAO.EnergyShift       100 meV
+#PAO.BasisSize         DZP
+
+
+#%block GeometryConstraints
+#position from 1 to 72
+#position from -1 to -72
+#%endblock GeometryConstraints
+
+%block kgrid_Monkhorst_Pack
+  10    0    0    0.0
+  0    10    0    0.0
+  0    0    10    0.0
+%endblock kgrid_Monkhorst_Pack
+
+#BandLinesScale         ReciprocalLatticeVectors
+#%block BandLines
+#  1  0.00000   0.00000   0.00000  \Gamma
+# 20  0.50000   0.00000   0.50000  X
+# 20  0.50000   0.25000   0.75000  W
+# 20  0.50000   0.50000   0.50000  L
+# 20  0.00000   0.00000   0.00000  \Gamma
+#%endblock BandLines
+
+
+
+xc.functional         GGA           # Exchange-correlation functional
+xc.authors            PBE             # Exchange-correlation version
+
+
+MeshCutoff          250. Ry         # Mesh cutoff. real space mesh
+
+# SCF options
+MaxSCFIterations      5000           # Maximum number of SCF iter
+DM.MixingWeight       0.02          # New DM amount for next SCF cycle
+DM.Tolerance          1.0E-5         # Tolerance in maximum difference
+                                    # between input and output DM
+DM.UseSaveDM           T          	# to use continuation files
+DM.NumberPulay         6
+
+#SolutionMethod        Diagon        # OrderN or Diagon
+ElectronicTemperature  25 meV       # Temp. for Fermi smearing
+
+# MD options
+
+#SolutionMethod          Transiesta
+MD.TypeOfRun           CG           # Type of dynamics:
+MD.NumCGsteps          0            # Number of CG steps for
+                                    #   coordinate optimization
+MD.MaxCGDispl          0.08 bohr     # Maximum atomic displacement
+                                    #   in one CG step (Bohr)
+MD.MaxForceTol         0.03 eV/Ang  # Tolerance in the maximum
+                                    #   atomic force (Ry/Bohr)
+MD.MaxStressTol        0.1 Gpa
+
+
+WriteForces             T
+WriteCoorStep           T
+WriteMDhistory          T
+SaveHS                  True
+TS.HS.Save              True
+SaveRHO                 T
+WriteMullikenPop        1
+
+#MullikenInSCF                 T
+SaveTotalPotential            T
+SaveElectrostaticPotential    T
+SaveDeltaRho                  T
+  
+
+#SlabDipoleCorrection T  # compensate the dipole of the system at every iteration of the self-consistent cycle
+
+%include STRUCT.fdf 
+
+
+
+
+
