@@ -271,7 +271,7 @@ class Parser(ABC):
             if hasattr(self, 'get_etot'):
                 energy_data = self.get_etot(idx)
                 if energy_data is not None:
-                    np.save(os.path.join(out_dir, "total_energy.npy"), energy_data[_keys.TOTAL_ENERGY_KEY])
+                    np.savetxt(os.path.join(out_dir, "total_energy.dat"), energy_data[_keys.TOTAL_ENERGY_KEY])
                 else:
                     log.warning(f"Failed to extract energy for structure {idx}")
             else:

@@ -65,12 +65,15 @@ def test_abacus_energy_write_dat():
 
         # Check if energy file was created
         output_dir = os.path.join(tmpdir, parser.formula(idx=0) + ".0")
-        energy_file = os.path.join(output_dir, "total_energy.npy")
+        energy_file = os.path.join(output_dir, "total_energy.dat")
 
         assert os.path.exists(energy_file), f"Energy file should exist at {energy_file}"
 
         # Load and verify energy
-        loaded_energy = np.load(energy_file)
+        loaded_energy = np.loadtxt(energy_file)
+        # loadtxt returns scalar for single value, convert to array for consistency
+        if loaded_energy.ndim == 0:
+            loaded_energy = np.array([loaded_energy])
         assert loaded_energy.shape == (1,), f"Expected shape (1,), got {loaded_energy.shape}"
         assert np.isclose(loaded_energy[0], -1879.7169812, atol=1e-5), \
             f"Loaded energy doesn't match expected value"
