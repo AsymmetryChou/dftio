@@ -434,8 +434,6 @@ class AbacusParser(Parser):
             Lines from the log file
         mode : str
             Calculation mode (scf, nscf, md, relax)
-        nframes : int, optional
-            Expected number of frames (for MD/relax validation)
         dump_freq : int, optional
             Dump frequency for MD calculations (default: 1)
 
@@ -443,9 +441,16 @@ class AbacusParser(Parser):
         -------
         tuple or None
             Tuple of (energy_array, unconverged_indices) where:
-            - energy_array: np.ndarray of energies in eV (filtered, converged only for MD)
+            - energy_array: np.ndarray of energies in eV
+              * SCF/NSCF: shape (1,)
+              * MD: energies for converged frames at dump intervals
+              * RELAX: energies for converged relaxation steps.
             - unconverged_indices: list of frame indices that did not converge
-            Returns None if extraction fails
+              (currently only used for MD).
+
+            Returns None if extraction fails or all frames are unconverged. In RELAX
+            mode a ValueError is raised instead when relaxation does not converge or
+            no energies are found.
         """
         energy = []
 
@@ -526,10 +531,14 @@ class AbacusParser(Parser):
         -------
         dict
             Dictionary with:
-            - _keys.TOTAL_ENERGY_KEY: energy array (shape: [1,] for SCF/NSCF, [nframes,] for MD/RELAX)
-            - _keys.UNCONVERGED_FRAME_INDICES_KEY: list of unconverged frame indices (empty if all converged)
-            Energy values are in eV.
-            Returns None if energy extraction fails or structures are unconverged.
+            - _keys.TOTAL_ENERGY_KEY: energy array in eV
+              * SCF/NSCF: shape (1,)
+              * MD/RELAX: length equals the number of converged frames at dump intervals.
+            - _keys.UNCONVERGED_FRAME_INDICES_KEY: list of unconverged frame indices
+              (empty if all frames converged).
+            Returns None if energy extraction fails or all frames are unconverged.
+            In RELAX mode, a ValueError is raised if relaxation did not converge or
+            no energies were found.
         """
         mode = self.get_mode(idx)
         logfile = "running_" + mode + ".log"
