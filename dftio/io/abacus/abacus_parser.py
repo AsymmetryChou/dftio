@@ -13,6 +13,9 @@ from dftio.io.parse import Parser, ParserRegister, find_target_line
 from dftio.data import _keys
 from dftio.register import Register
 import lmdb
+import logging
+
+log = logging.getLogger(__name__)
 import pickle
 import shutil
 
@@ -438,8 +441,11 @@ class AbacusParser(Parser):
 
         Returns
         -------
-        np.ndarray or None
-            Array of energies in eV, or None if extraction fails
+        tuple or None
+            Tuple of (energy_array, unconverged_indices) where:
+            - energy_array: np.ndarray of energies in eV (filtered, converged only for MD)
+            - unconverged_indices: list of frame indices that did not converge
+            Returns None if extraction fails
         """
         energy = []
 
@@ -449,11 +455,11 @@ class AbacusParser(Parser):
                 if "final etot is" in line:
                     # LTS version format: "final etot is <value> eV"
                     Etot = float(line.split()[-2])
-                    return np.array([Etot], dtype=np.float64)
+                    return (np.array([Etot], dtype=np.float64), [])
                 elif "TOTAL ENERGY" in line:
                     # Develop version format
                     Etot = float(line.split()[-2])
-                    return np.array([Etot], dtype=np.float64)
+                    return (np.array([Etot], dtype=np.float64), [])
                 elif "convergence has NOT been achieved!" in line or \
                      "convergence has not been achieved" in line:
                     # SCF did not converge
@@ -476,14 +482,18 @@ class AbacusParser(Parser):
             if len(energy) == 0:
                 return None
 
-            # Filter out unconverged frames (NaN values)
+            # Filter out unconverged frames (NaN values) and track their indices
             energy = np.array(energy, dtype=np.float64)
             valid_mask = ~np.isnan(energy)
             if not valid_mask.any():
                 return None
 
+            # Get indices of unconverged frames
+            unconverged_indices = np.where(~valid_mask)[0].tolist()
+
+            # Filter to keep only converged frames
             energy = energy[valid_mask]
-            return energy
+            return (energy, unconverged_indices)
 
         elif mode == "relax":
             relax_success = False
@@ -495,10 +505,11 @@ class AbacusParser(Parser):
                     energy.append(float(line.split()[-2]))
 
             if relax_success and len(energy) > 0:
-                return np.array(energy, dtype=np.float64)
+                return (np.array(energy, dtype=np.float64), [])
             else:
+                # raise error when relaxation did not converge or no energies found
                 raise ValueError("Relaxation did not converge or no energies found.")
-    
+
         else:
             return None
 
@@ -514,8 +525,9 @@ class AbacusParser(Parser):
         Returns
         -------
         dict
-            Dictionary with _keys.TOTAL_ENERGY_KEY containing energy array.
-            Shape: [1,] for SCF/NSCF, [nframes,] for MD/RELAX.
+            Dictionary with:
+            - _keys.TOTAL_ENERGY_KEY: energy array (shape: [1,] for SCF/NSCF, [nframes,] for MD/RELAX)
+            - _keys.UNCONVERGED_FRAME_INDICES_KEY: list of unconverged frame indices (empty if all converged)
             Energy values are in eV.
             Returns None if energy extraction fails or structures are unconverged.
         """
@@ -543,12 +555,21 @@ class AbacusParser(Parser):
                             break
 
         # Extract energy
-        energy = self._extract_energy_from_log(loglines, mode, dump_freq)
+        result = self._extract_energy_from_log(loglines, mode, dump_freq)
 
-        if energy is None:
+        if result is None:
             return None
 
-        return {_keys.TOTAL_ENERGY_KEY: energy}
+        energy, unconverged_indices = result
+
+        # Log warning if there are unconverged frames
+        if len(unconverged_indices) > 0:
+            log.warning(f"Energy extraction: frames {unconverged_indices} did not converge")
+
+        return {
+            _keys.TOTAL_ENERGY_KEY: energy,
+            _keys.UNCONVERGED_FRAME_INDICES_KEY: unconverged_indices
+        }
 
     def get_abs_h0_folders(self, h0_root):
         # Build a map of all directory names to their full paths to avoid repeated os.walk calls

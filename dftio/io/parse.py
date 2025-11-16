@@ -272,6 +272,15 @@ class Parser(ABC):
                 energy_data = self.get_etot(idx)
                 if energy_data is not None:
                     np.savetxt(os.path.join(out_dir, "total_energy.dat"), energy_data[_keys.TOTAL_ENERGY_KEY])
+
+                    # Write unconverged frame indices if present
+                    if _keys.UNCONVERGED_FRAME_INDICES_KEY in energy_data:
+                        unconverged_indices = energy_data[_keys.UNCONVERGED_FRAME_INDICES_KEY]
+                        if len(unconverged_indices) > 0:
+                            with open(os.path.join(out_dir, "unconverged_frames.dat"), 'w') as f:
+                                f.write("# Frame indices that did not converge during MD/RELAX\n")
+                                for idx_frame in unconverged_indices:
+                                    f.write(f"{idx_frame}\n")
                 else:
                     log.warning(f"Failed to extract energy for structure {idx}")
             else:
@@ -325,6 +334,21 @@ class Parser(ABC):
                 energy_data = None
                 log.warning(f"Parser does not implement get_etot method")
 
+        # Build frame index mapping for energy data
+        # If there are unconverged frames, energy array will be shorter than n_frames
+        energy_frame_mapping = None
+        if energy and energy_data is not None:
+            unconverged_indices = energy_data.get(_keys.UNCONVERGED_FRAME_INDICES_KEY, [])
+            if len(unconverged_indices) > 0:
+                # Build mapping: structure_frame_idx -> energy_array_idx
+                energy_frame_mapping = {}
+                energy_idx = 0
+                n_frames_total = structure[_keys.POSITIONS_KEY].shape[0]
+                for frame_idx in range(n_frames_total):
+                    if frame_idx not in unconverged_indices:
+                        energy_frame_mapping[frame_idx] = energy_idx
+                        energy_idx += 1
+
         n_frames = structure[_keys.POSITIONS_KEY].shape[0]
         lmdb_env = lmdb.open(out_dir, map_size=1048576000000, lock=True)
         for nf in range(n_frames):
@@ -340,13 +364,20 @@ class Parser(ABC):
 
             if energy and energy_data is not None:
                 # For single structure (SCF/NSCF), energy_data has shape [1,]
-                # For trajectories (MD/RELAX), energy_data has shape [nframes,]
+                # For trajectories (MD/RELAX), energy_data has shape [nframes,] or less if unconverged
                 if energy_data[_keys.TOTAL_ENERGY_KEY].shape[0] == 1:
                     # Single structure case
                     data_dict[_keys.TOTAL_ENERGY_KEY] = energy_data[_keys.TOTAL_ENERGY_KEY][0]
                 else:
-                    # Trajectory case
-                    data_dict[_keys.TOTAL_ENERGY_KEY] = energy_data[_keys.TOTAL_ENERGY_KEY][nf]
+                    # Trajectory case - use mapping if unconverged frames exist
+                    if energy_frame_mapping is not None:
+                        if nf in energy_frame_mapping:
+                            energy_idx = energy_frame_mapping[nf]
+                            data_dict[_keys.TOTAL_ENERGY_KEY] = energy_data[_keys.TOTAL_ENERGY_KEY][energy_idx]
+                        # else: skip energy for unconverged frames (don't add to data_dict)
+                    else:
+                        # No unconverged frames, direct indexing
+                        data_dict[_keys.TOTAL_ENERGY_KEY] = energy_data[_keys.TOTAL_ENERGY_KEY][nf]
 
             if hamiltonian:
                 data_dict["hamiltonian"] = ham[nf]

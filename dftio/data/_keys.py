@@ -103,6 +103,7 @@ NODE_SOC_SWITCH_KEY: Final[str] = "node_soc_switch"
 
 PER_ATOM_ENERGY_KEY: Final[str] = "atomic_energy"
 TOTAL_ENERGY_KEY: Final[str] = "total_energy"
+UNCONVERGED_FRAME_INDICES_KEY: Final[str] = "unconverged_frames"
 FORCE_KEY: Final[str] = "forces"
 PARTIAL_FORCE_KEY: Final[str] = "partial_forces"
 STRESS_KEY: Final[str] = "stress"

@@ -210,10 +210,100 @@ def test_abacus_relax_energy():
     print(f"RELAX energy extraction test passed: {energy.shape[0]} frames extracted")
 
 
+def test_abacus_unconverged_frames():
+    """Test handling of unconverged MD frames."""
+    from dftio.io.abacus.abacus_parser import AbacusParser
+
+    # Create mock log lines for MD with unconverged frames
+    mock_loglines = [
+        "Step 1\n",
+        " final etot is  -100.0 eV\n",  # Frame 0 - converged
+        "Step 2\n",
+        " final etot is  -100.5 eV\n",  # Frame 1 - converged
+        "Step 3\n",
+        " !! convergence has not been achieved\n",  # Frame 2 - unconverged
+        "Step 4\n",
+        " final etot is  -101.0 eV\n",  # Frame 3 - converged
+        "Step 5\n",
+        " !! convergence has not been achieved\n",  # Frame 4 - unconverged
+        "Step 6\n",
+        " final etot is  -101.5 eV\n",  # Frame 5 - converged
+    ]
+
+    # Test _extract_energy_from_log method
+    result = AbacusParser._extract_energy_from_log(mock_loglines, mode="md", dump_freq=1)
+
+    assert result is not None, "Result should not be None"
+    energy, unconverged_indices = result
+
+    # Check that unconverged frames were filtered out
+    assert len(energy) == 4, f"Expected 4 converged frames, got {len(energy)}"
+    assert len(unconverged_indices) == 2, f"Expected 2 unconverged frames, got {len(unconverged_indices)}"
+    assert unconverged_indices == [2, 4], f"Expected unconverged indices [2, 4], got {unconverged_indices}"
+
+    # Check energy values
+    expected_energies = np.array([-100.0, -100.5, -101.0, -101.5], dtype=np.float64)
+    assert np.allclose(energy, expected_energies, atol=1e-5), \
+        f"Energy values don't match.\nExpected:\n{expected_energies}\nGot:\n{energy}"
+
+    print(f"Unconverged frames test passed: {len(unconverged_indices)} unconverged frames detected at indices {unconverged_indices}")
+
+
+def test_abacus_unconverged_write_dat():
+    """Test writing unconverged frame indices to file."""
+    import tempfile
+    from unittest.mock import Mock, patch
+
+    test_data_dir = os.path.join(os.path.dirname(__file__), "data", "abacus_scf")
+
+    parser = AbacusParser(
+        root=[test_data_dir],
+        prefix=""
+    )
+
+    # Mock get_etot to return data with unconverged frames
+    with tempfile.TemporaryDirectory() as tmpdir:
+        with patch.object(parser, 'get_etot') as mock_get_etot:
+            mock_get_etot.return_value = {
+                _keys.TOTAL_ENERGY_KEY: np.array([-100.0, -100.5], dtype=np.float64),
+                _keys.UNCONVERGED_FRAME_INDICES_KEY: [1, 3]
+            }
+
+            parser.write(
+                idx=0,
+                outroot=tmpdir,
+                format="dat",
+                eigenvalue=False,
+                hamiltonian=False,
+                overlap=False,
+                density_matrix=False,
+                band_index_min=0,
+                energy=True
+            )
+
+            # Check if unconverged_frames.dat was created
+            output_dir = os.path.join(tmpdir, parser.formula(idx=0) + ".0")
+            unconverged_file = os.path.join(output_dir, "unconverged_frames.dat")
+
+            assert os.path.exists(unconverged_file), f"Unconverged frames file should exist at {unconverged_file}"
+
+            # Read and verify content
+            with open(unconverged_file, 'r') as f:
+                lines = f.readlines()
+
+            # Skip comment line
+            indices = [int(line.strip()) for line in lines if not line.startswith('#')]
+            assert indices == [1, 3], f"Expected indices [1, 3], got {indices}"
+
+            print(f"Unconverged frames write test passed: {unconverged_file} created with indices {indices}")
+
+
 if __name__ == "__main__":
     test_abacus_scf_energy()
     test_abacus_energy_write_dat()
     test_abacus_energy_write_lmdb()
     test_abacus_md_energy()
     test_abacus_relax_energy()
+    test_abacus_unconverged_frames()
+    test_abacus_unconverged_write_dat()
     print("\nAll energy extraction tests passed!")
