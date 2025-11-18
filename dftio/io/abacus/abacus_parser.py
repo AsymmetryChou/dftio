@@ -14,6 +14,7 @@ from dftio.data import _keys
 from dftio.register import Register
 import lmdb
 import logging
+import glob
 
 log = logging.getLogger(__name__)
 import pickle
@@ -31,9 +32,58 @@ class AbacusParser(Parser):
         super(AbacusParser, self).__init__(root, prefix)
         mode = self.get_mode(idx=0)
         if mode in ['nscf', "scf"]:
-            self.raw_sys = [dpdata.System(read(os.path.join(self.raw_datas[idx], "OUT.ABACUS", "STRU.cif")), fmt="ase/structure") for idx in range(len(self.raw_datas))]
+            self.raw_sys = [dpdata.System(read(os.path.join(self._get_output_dir(idx), "STRU.cif")), fmt="ase/structure") for idx in range(len(self.raw_datas))]
         else:
             self.raw_sys = [dpdata.LabeledSystem(self.raw_datas[idx], fmt='abacus/'+self.get_mode(idx)) for idx in range(len(self.raw_datas))]
+
+    def _get_output_dir(self, idx):
+        """
+        Get the ABACUS output directory for a given index.
+
+        First checks for 'OUT.ABACUS', and if not found, searches for directories
+        matching the pattern 'OUT.*' (e.g., 'OUT.suffix' when suffix is specified).
+
+        Parameters
+        ----------
+        idx : int
+            Index of the structure/trajectory
+
+        Returns
+        -------
+        str
+            Path to the output directory
+
+        Raises
+        ------
+        FileNotFoundError
+            If no suitable output directory is found
+        """
+        base_path = self.raw_datas[idx]
+
+        # First try the default OUT.ABACUS directory
+        out_abacus_path = os.path.join(base_path, "OUT.ABACUS")
+        if os.path.exists(out_abacus_path):
+            return out_abacus_path
+
+        # If OUT.ABACUS doesn't exist, search for OUT.* pattern
+        search_pattern = os.path.join(base_path, "OUT.*")
+        out_dirs = glob.glob(search_pattern)
+
+        # Filter to directories only
+        out_dirs = [d for d in out_dirs if os.path.isdir(d)]
+
+        if len(out_dirs) == 0:
+            raise FileNotFoundError(f"No ABACUS output directory found in {base_path}. "
+                                  f"Looked for OUT.ABACUS or OUT.* pattern.")
+        elif len(out_dirs) == 1:
+            log.info(f"Using output directory: {out_dirs[0]} (OUT.ABACUS not found, using OUT.* pattern)")
+            return out_dirs[0]
+        else:
+            # If multiple directories found, prefer the one with most common suffixes
+            # or the one that was most recently modified
+            log.warning(f"Multiple output directories found: {out_dirs}. Using the most recently modified one.")
+            out_dirs.sort(key=os.path.getmtime, reverse=True)
+            return out_dirs[0]
 
     # essential
     def get_structure(self, idx):
@@ -49,7 +99,7 @@ class AbacusParser(Parser):
         return structure
     
     def get_mode(self, idx):
-        with open(os.path.join(self.raw_datas[idx], "OUT.ABACUS", "INPUT"), 'r') as f:
+        with open(os.path.join(self._get_output_dir(idx), "INPUT"), 'r') as f:
             line = find_target_line(f, "calculation")
             assert line is not None, 'Cannot find "MODE" in log file'
             mode = line.split()[1]
@@ -59,14 +109,14 @@ class AbacusParser(Parser):
     
     # essential
     def get_eigenvalue(self, idx, band_index_min=0):
-        path = self.raw_datas[idx]
         mode = self.get_mode(idx)
         if mode in ["scf", "nscf"]:
-            assert os.path.exists(os.path.join(path, "OUT.ABACUS", "BANDS_1.dat"))
-            eigs = np.loadtxt(os.path.join(path, "OUT.ABACUS", "BANDS_1.dat"))[np.newaxis, :, 2+band_index_min:]
-            assert os.path.exists(os.path.join(path, "OUT.ABACUS", "kpoints"))
+            output_dir = self._get_output_dir(idx)
+            assert os.path.exists(os.path.join(output_dir, "BANDS_1.dat"))
+            eigs = np.loadtxt(os.path.join(output_dir, "BANDS_1.dat"))[np.newaxis, :, 2+band_index_min:]
+            assert os.path.exists(os.path.join(output_dir, "kpoints"))
             kpts = []
-            with open(os.path.join(path, "OUT.ABACUS", "kpoints"), "r") as f:
+            with open(os.path.join(output_dir, "kpoints"), "r") as f:
                 line = find_target_line(f, "nkstot now")
                 nkstot = line.strip().split()[-1]
                 line = find_target_line(f, "KPOINTS ")
@@ -96,7 +146,7 @@ class AbacusParser(Parser):
         mode = self.get_mode(idx)
         logfile = "running_"+mode+".log"
         sys = self.raw_sys[idx]
-        with open(os.path.join(self.raw_datas[idx], "OUT.ABACUS", logfile), 'r') as f:
+        with open(os.path.join(self._get_output_dir(idx), logfile), 'r') as f:
             orbital_types_dict = {}
             for index_type in range(len(sys.data["atom_numbs"])):
                 tmp = find_target_line(f, "READING ATOM TYPE")
@@ -137,9 +187,10 @@ class AbacusParser(Parser):
         hamiltonian_dict, overlap_dict, density_matrix_dict = None, None, None
         sys = self.raw_sys[idx]
         nsites = sys.data["atom_types"].shape[0]
-        if os.path.exists(os.path.join(self.raw_datas[idx], "OUT.ABACUS", "hscsr.tgz")):
-            os.system(f"tar -xzf {os.path.join(self.raw_datas[idx], 'OUT.ABACUS', 'hscsr.tgz')} -C {os.path.join(self.raw_datas[idx])}")
-        with open(os.path.join(self.raw_datas[idx], "OUT.ABACUS", logfile), 'r') as f:
+        output_dir = self._get_output_dir(idx)
+        if os.path.exists(os.path.join(output_dir, "hscsr.tgz")):
+            os.system(f"tar -xzf {os.path.join(output_dir, 'hscsr.tgz')} -C {os.path.join(self.raw_datas[idx])}")
+        with open(os.path.join(output_dir, logfile), 'r') as f:
             site_norbits_dict = {}
             orbital_types_dict = {}
             for index_type in range(len(sys.data["atom_numbs"])):
@@ -202,7 +253,7 @@ class AbacusParser(Parser):
         if mode in ["scf", "nscf"]:
             if hamiltonian:
                 hamiltonian_dict, tmp = self.parse_matrix(
-                    matrix_path=os.path.join(self.raw_datas[idx], "OUT.ABACUS", "data-HR-sparse_SPIN0.csr"), 
+                    matrix_path=os.path.join(output_dir, "data-HR-sparse_SPIN0.csr"), 
                     nsites=nsites,
                     site_norbits=site_norbits,
                     orbital_types_dict=orbital_types_dict,
@@ -215,7 +266,7 @@ class AbacusParser(Parser):
             
             if overlap:
                 overlap_dict, tmp = self.parse_matrix(
-                    matrix_path=os.path.join(self.raw_datas[idx], "OUT.ABACUS", "data-SR-sparse_SPIN0.csr"), 
+                    matrix_path=os.path.join(output_dir, "data-SR-sparse_SPIN0.csr"), 
                     nsites=nsites,
                     site_norbits=site_norbits,
                     orbital_types_dict=orbital_types_dict,
@@ -235,7 +286,7 @@ class AbacusParser(Parser):
 
             if density_matrix:
                 density_matrix_dict, tmp = self.parse_matrix(
-                    matrix_path=os.path.join(self.raw_datas[idx], "OUT.ABACUS", "data-DMR-sparse_SPIN0.csr"), 
+                    matrix_path=os.path.join(output_dir, "data-DMR-sparse_SPIN0.csr"), 
                     nsites=nsites,
                     site_norbits=site_norbits,
                     orbital_types_dict=orbital_types_dict,
@@ -251,9 +302,9 @@ class AbacusParser(Parser):
             if hamiltonian:
                 hamiltonian_dict = []
                 for i in range(sys.get_nframes()):
-                    if os.path.exists(os.path.join(self.raw_datas[idx], "OUT.ABACUS", "matrix/")):
+                    if os.path.exists(os.path.join(output_dir, "matrix/")):
                         hamil, tmp = self.parse_matrix(
-                            matrix_path=os.path.join(self.raw_datas[idx], "OUT.ABACUS", "matrix/"+str(i)+"_data-HR-sparse_SPIN0.csr"), 
+                            matrix_path=os.path.join(output_dir, "matrix/"+str(i)+"_data-HR-sparse_SPIN0.csr"), 
                             nsites=nsites,
                             site_norbits=site_norbits,
                             orbital_types_dict=orbital_types_dict,
@@ -263,7 +314,7 @@ class AbacusParser(Parser):
                             )
                     else:
                         hamil, tmp = self.parse_matrix(
-                            matrix_path=os.path.join(self.raw_datas[idx], "OUT.ABACUS/data-HR-sparse_SPIN0.csr"), 
+                            matrix_path=os.path.join(output_dir, "data-HR-sparse_SPIN0.csr"), 
                             nsites=nsites,
                             site_norbits=site_norbits,
                             orbital_types_dict=orbital_types_dict,
@@ -278,9 +329,9 @@ class AbacusParser(Parser):
             if overlap:
                 overlap_dict = []
                 for i in range(sys.get_nframes()):
-                    if os.path.exists(os.path.join(self.raw_datas[idx], "OUT.ABACUS", "matrix/")):
+                    if os.path.exists(os.path.join(output_dir, "matrix/")):
                         ovp, tmp = self.parse_matrix(
-                            matrix_path=os.path.join(self.raw_datas[idx], "OUT.ABACUS", "matrix/"+str(i)+"_data-SR-sparse_SPIN0.csr"), 
+                            matrix_path=os.path.join(output_dir, "matrix/"+str(i)+"_data-SR-sparse_SPIN0.csr"), 
                             nsites=nsites,
                             site_norbits=site_norbits,
                             orbital_types_dict=orbital_types_dict,
@@ -290,7 +341,7 @@ class AbacusParser(Parser):
                             )
                     else:
                         ovp, tmp = self.parse_matrix(
-                            matrix_path=os.path.join(self.raw_datas[idx], "OUT.ABACUS/data-SR-sparse_SPIN0.csr"), 
+                            matrix_path=os.path.join(output_dir, "data-SR-sparse_SPIN0.csr"), 
                             nsites=nsites,
                             site_norbits=site_norbits,
                             orbital_types_dict=orbital_types_dict,
@@ -312,9 +363,9 @@ class AbacusParser(Parser):
             if density_matrix:
                 density_matrix_dict = []
                 for i in range(sys.get_nframes()):
-                    if os.path.exists(os.path.join(self.raw_datas[idx], "OUT.ABACUS", "matrix/")):
+                    if os.path.exists(os.path.join(output_dir, "matrix/")):
                         dm, tmp = self.parse_matrix(
-                            matrix_path=os.path.join(self.raw_datas[idx], "OUT.ABACUS", "matrix/"+str(i)+"_data-DMR-sparse_SPIN0.csr"), 
+                            matrix_path=os.path.join(output_dir, "matrix/"+str(i)+"_data-DMR-sparse_SPIN0.csr"), 
                             nsites=nsites,
                             site_norbits=site_norbits,
                             orbital_types_dict=orbital_types_dict,
@@ -324,7 +375,7 @@ class AbacusParser(Parser):
                             )
                     else:
                         dm, tmp = self.parse_matrix(
-                            matrix_path=os.path.join(self.raw_datas[idx], "OUT.ABACUS/data-DMR-sparse_SPIN0.csr"), 
+                            matrix_path=os.path.join(output_dir, "data-DMR-sparse_SPIN0.csr"), 
                             nsites=nsites,
                             site_norbits=site_norbits,
                             orbital_types_dict=orbital_types_dict,
@@ -542,7 +593,7 @@ class AbacusParser(Parser):
         """
         mode = self.get_mode(idx)
         logfile = "running_" + mode + ".log"
-        logpath = os.path.join(self.raw_datas[idx], "OUT.ABACUS", logfile)
+        logpath = os.path.join(self._get_output_dir(idx), logfile)
 
         # Check if log file exists
         if not os.path.exists(logpath):
