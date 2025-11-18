@@ -19,7 +19,7 @@ import glob
 log = logging.getLogger(__name__)
 import pickle
 import shutil
-
+import subprocess
 
 @ParserRegister.register("abacus")
 class AbacusParser(Parser):
@@ -189,7 +189,11 @@ class AbacusParser(Parser):
         nsites = sys.data["atom_types"].shape[0]
         output_dir = self._get_output_dir(idx)
         if os.path.exists(os.path.join(output_dir, "hscsr.tgz")):
-            os.system(f"tar -xzf {os.path.join(output_dir, 'hscsr.tgz')} -C {os.path.join(self.raw_datas[idx])}")
+            # os.system(f"tar -xzf {os.path.join(output_dir, 'hscsr.tgz')} -C {os.path.join(self.raw_datas[idx])}")
+            subprocess.run(
+                ["tar", "-xzf", os.path.join(output_dir, 'hscsr.tgz'), "-C", os.path.join(self.raw_datas[idx])],
+                check=True
+            )
         with open(os.path.join(output_dir, logfile), 'r') as f:
             site_norbits_dict = {}
             orbital_types_dict = {}
