@@ -27,7 +27,7 @@ def test_vasp_scf_energy():
     assert energy.shape == (1,), f"Expected shape (1,), got {energy.shape}"
 
     # Check dtype
-    assert energy.dtype == np.float32, f"Expected dtype float32, got {energy.dtype}"
+    assert energy.dtype == np.float64, f"Expected dtype float64, got {energy.dtype}"
 
     # Check value (from OUTCAR: last energy(sigma->0) = -10.53568912 eV)
     expected_energy = -10.53568912
@@ -45,7 +45,7 @@ def test_vasp_read_total_energy_static():
 
     # Should extract the last energy(sigma->0) value
     expected_energy = -10.53568912
-    assert np.isclose(energy, expected_energy, atol=1e-5), \
+    assert np.isclose(energy, expected_energy, atol=1e-9, rtol=0), \
         f"Expected energy ~{expected_energy}, got {energy}"
 
     print(f"VASP read_total_energy static method test passed: {energy} eV")

@@ -82,7 +82,7 @@ class VASPParser(Parser):
         path = self.raw_datas[idx]
         assert os.path.exists(os.path.join(path, "OUTCAR"))
         energy = self.read_total_energy(os.path.join(path, "OUTCAR"))
-        return {_keys.TOTAL_ENERGY_KEY: np.array([energy], dtype=np.float32)}
+        return {_keys.TOTAL_ENERGY_KEY: np.array([energy], dtype=np.float64)}
 
     # Alias for compatibility with base Parser class
     def get_etot(self, idx):
@@ -106,4 +106,6 @@ class VASPParser(Parser):
             log.warning("Multiple energy(sigma->0) found in OUTCAR. Using the last one.")
         energy = energy[-1] if energy else None
         assert energy is not None, "Cannot find energy(sigma->0) in OUTCAR."
+        
+        energy = np.array(energy, dtype=np.float64)
         return energy
