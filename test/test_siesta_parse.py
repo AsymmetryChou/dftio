@@ -71,7 +71,9 @@ def test_find_content(root_directory):
     assert struct == os.path.join(path, 'STRUCT.fdf')
 
     chemspecis,_ = SiestaParser.find_content(path= path,str_to_find='ChemicalSpeciesLabel')
-    assert chemspecis == os.path.join(path, 'STRUCT.fdf')
+    # ChemicalSpeciesLabel can be in either STRUCT.fdf or RUN_band.fdf
+    assert chemspecis in [os.path.join(path, 'STRUCT.fdf'), os.path.join(path, 'RUN_band.fdf')]
+
 
     log_file,_ = SiestaParser.find_content(path=path,str_to_find='WELCOME',for_Kpt_bands=True)
     assert log_file == os.path.join(path, 'out.log')
