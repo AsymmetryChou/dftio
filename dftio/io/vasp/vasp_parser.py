@@ -87,6 +87,7 @@ class VASPParser(Parser):
     # Alias for compatibility with base Parser class
     def get_etot(self, idx):
         """Alias for get_total_energy to match base Parser convention."""
+        log.warning("Only support for VASP static calculations. get_etot is an alias for get_total_energy.")
         return self.get_total_energy(idx)
     
     @staticmethod
