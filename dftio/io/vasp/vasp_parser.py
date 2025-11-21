@@ -78,3 +78,34 @@ class VASPParser(Parser):
     def get_blocks(self, idx, hamiltonian: bool=False, overlap: bool=False, density_matrix: bool=False):
         raise NotImplementedError("VASP does not support block parsing yet.")
 
+    def get_total_energy(self, idx):
+        path = self.raw_datas[idx]
+        assert os.path.exists(os.path.join(path, "OUTCAR"))
+        energy = self.read_total_energy(os.path.join(path, "OUTCAR"))
+        return {_keys.TOTAL_ENERGY_KEY: np.array([energy], dtype=np.float64)}
+
+    # Alias for compatibility with base Parser class
+    def get_etot(self, idx):
+        """Alias for get_total_energy to match base Parser convention."""
+        log.warning("Only support for VASP static calculations. get_etot is an alias for get_total_energy.")
+        return self.get_total_energy(idx)
+    
+    @staticmethod
+    def read_total_energy(file):
+        """
+        Extract energy(sigma->0) from VASP OUTCAR file.
+        This is the extrapolated energy to 0K.
+        """
+        energy = []
+        with open(file, 'r') as f:
+            data = f.readlines()
+        for line in data:
+            if "energy(sigma->0)" in line:
+                energy.append(float(re.findall(r'[\-\d\.E]+', line)[-1]))
+        if len(energy) > 1:
+            log.warning("Multiple energy(sigma->0) found in OUTCAR. Using the last one.")
+        energy = energy[-1] if energy else None
+        assert energy is not None, "Cannot find energy(sigma->0) in OUTCAR."
+        
+        energy = np.array(energy, dtype=np.float64)
+        return energy

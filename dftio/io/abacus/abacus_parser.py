@@ -13,9 +13,13 @@ from dftio.io.parse import Parser, ParserRegister, find_target_line
 from dftio.data import _keys
 from dftio.register import Register
 import lmdb
+import logging
+import glob
+
+log = logging.getLogger(__name__)
 import pickle
 import shutil
-
+import subprocess
 
 @ParserRegister.register("abacus")
 class AbacusParser(Parser):
@@ -28,9 +32,58 @@ class AbacusParser(Parser):
         super(AbacusParser, self).__init__(root, prefix)
         mode = self.get_mode(idx=0)
         if mode in ['nscf', "scf"]:
-            self.raw_sys = [dpdata.System(read(os.path.join(self.raw_datas[idx], "OUT.ABACUS", "STRU.cif")), fmt="ase/structure") for idx in range(len(self.raw_datas))]
+            self.raw_sys = [dpdata.System(read(os.path.join(self._get_output_dir(idx), "STRU.cif")), fmt="ase/structure") for idx in range(len(self.raw_datas))]
         else:
             self.raw_sys = [dpdata.LabeledSystem(self.raw_datas[idx], fmt='abacus/'+self.get_mode(idx)) for idx in range(len(self.raw_datas))]
+
+    def _get_output_dir(self, idx):
+        """
+        Get the ABACUS output directory for a given index.
+
+        First checks for 'OUT.ABACUS', and if not found, searches for directories
+        matching the pattern 'OUT.*' (e.g., 'OUT.suffix' when suffix is specified).
+
+        Parameters
+        ----------
+        idx : int
+            Index of the structure/trajectory
+
+        Returns
+        -------
+        str
+            Path to the output directory
+
+        Raises
+        ------
+        FileNotFoundError
+            If no suitable output directory is found
+        """
+        base_path = self.raw_datas[idx]
+
+        # First try the default OUT.ABACUS directory
+        out_abacus_path = os.path.join(base_path, "OUT.ABACUS")
+        if os.path.exists(out_abacus_path):
+            return out_abacus_path
+
+        # If OUT.ABACUS doesn't exist, search for OUT.* pattern
+        search_pattern = os.path.join(base_path, "OUT.*")
+        out_dirs = glob.glob(search_pattern)
+
+        # Filter to directories only
+        out_dirs = [d for d in out_dirs if os.path.isdir(d)]
+
+        if len(out_dirs) == 0:
+            raise FileNotFoundError(f"No ABACUS output directory found in {base_path}. "
+                                  f"Looked for OUT.ABACUS or OUT.* pattern.")
+        elif len(out_dirs) == 1:
+            log.info(f"Using output directory: {out_dirs[0]} (OUT.ABACUS not found, using OUT.* pattern)")
+            return out_dirs[0]
+        else:
+            # If multiple directories found, prefer the one with most common suffixes
+            # or the one that was most recently modified
+            log.warning(f"Multiple output directories found: {out_dirs}. Using the most recently modified one.")
+            out_dirs.sort(key=os.path.getmtime, reverse=True)
+            return out_dirs[0]
 
     # essential
     def get_structure(self, idx):
@@ -46,7 +99,7 @@ class AbacusParser(Parser):
         return structure
     
     def get_mode(self, idx):
-        with open(os.path.join(self.raw_datas[idx], "OUT.ABACUS", "INPUT"), 'r') as f:
+        with open(os.path.join(self._get_output_dir(idx), "INPUT"), 'r') as f:
             line = find_target_line(f, "calculation")
             assert line is not None, 'Cannot find "MODE" in log file'
             mode = line.split()[1]
@@ -56,14 +109,14 @@ class AbacusParser(Parser):
     
     # essential
     def get_eigenvalue(self, idx, band_index_min=0):
-        path = self.raw_datas[idx]
         mode = self.get_mode(idx)
         if mode in ["scf", "nscf"]:
-            assert os.path.exists(os.path.join(path, "OUT.ABACUS", "BANDS_1.dat"))
-            eigs = np.loadtxt(os.path.join(path, "OUT.ABACUS", "BANDS_1.dat"))[np.newaxis, :, 2+band_index_min:]
-            assert os.path.exists(os.path.join(path, "OUT.ABACUS", "kpoints"))
+            output_dir = self._get_output_dir(idx)
+            assert os.path.exists(os.path.join(output_dir, "BANDS_1.dat"))
+            eigs = np.loadtxt(os.path.join(output_dir, "BANDS_1.dat"))[np.newaxis, :, 2+band_index_min:]
+            assert os.path.exists(os.path.join(output_dir, "kpoints"))
             kpts = []
-            with open(os.path.join(path, "OUT.ABACUS", "kpoints"), "r") as f:
+            with open(os.path.join(output_dir, "kpoints"), "r") as f:
                 line = find_target_line(f, "nkstot now")
                 nkstot = line.strip().split()[-1]
                 line = find_target_line(f, "KPOINTS ")
@@ -93,7 +146,7 @@ class AbacusParser(Parser):
         mode = self.get_mode(idx)
         logfile = "running_"+mode+".log"
         sys = self.raw_sys[idx]
-        with open(os.path.join(self.raw_datas[idx], "OUT.ABACUS", logfile), 'r') as f:
+        with open(os.path.join(self._get_output_dir(idx), logfile), 'r') as f:
             orbital_types_dict = {}
             for index_type in range(len(sys.data["atom_numbs"])):
                 tmp = find_target_line(f, "READING ATOM TYPE")
@@ -134,9 +187,14 @@ class AbacusParser(Parser):
         hamiltonian_dict, overlap_dict, density_matrix_dict = None, None, None
         sys = self.raw_sys[idx]
         nsites = sys.data["atom_types"].shape[0]
-        if os.path.exists(os.path.join(self.raw_datas[idx], "OUT.ABACUS", "hscsr.tgz")):
-            os.system(f"tar -xzf {os.path.join(self.raw_datas[idx], 'OUT.ABACUS', 'hscsr.tgz')} -C {os.path.join(self.raw_datas[idx])}")
-        with open(os.path.join(self.raw_datas[idx], "OUT.ABACUS", logfile), 'r') as f:
+        output_dir = self._get_output_dir(idx)
+        if os.path.exists(os.path.join(output_dir, "hscsr.tgz")):
+            # os.system(f"tar -xzf {os.path.join(output_dir, 'hscsr.tgz')} -C {os.path.join(self.raw_datas[idx])}")
+            subprocess.run(
+                ["tar", "-xzf", os.path.join(output_dir, 'hscsr.tgz'), "-C", os.path.join(self.raw_datas[idx])],
+                check=True
+            )
+        with open(os.path.join(output_dir, logfile), 'r') as f:
             site_norbits_dict = {}
             orbital_types_dict = {}
             for index_type in range(len(sys.data["atom_numbs"])):
@@ -199,7 +257,7 @@ class AbacusParser(Parser):
         if mode in ["scf", "nscf"]:
             if hamiltonian:
                 hamiltonian_dict, tmp = self.parse_matrix(
-                    matrix_path=os.path.join(self.raw_datas[idx], "OUT.ABACUS", "data-HR-sparse_SPIN0.csr"), 
+                    matrix_path=os.path.join(output_dir, "data-HR-sparse_SPIN0.csr"), 
                     nsites=nsites,
                     site_norbits=site_norbits,
                     orbital_types_dict=orbital_types_dict,
@@ -212,7 +270,7 @@ class AbacusParser(Parser):
             
             if overlap:
                 overlap_dict, tmp = self.parse_matrix(
-                    matrix_path=os.path.join(self.raw_datas[idx], "OUT.ABACUS", "data-SR-sparse_SPIN0.csr"), 
+                    matrix_path=os.path.join(output_dir, "data-SR-sparse_SPIN0.csr"), 
                     nsites=nsites,
                     site_norbits=site_norbits,
                     orbital_types_dict=orbital_types_dict,
@@ -232,7 +290,7 @@ class AbacusParser(Parser):
 
             if density_matrix:
                 density_matrix_dict, tmp = self.parse_matrix(
-                    matrix_path=os.path.join(self.raw_datas[idx], "OUT.ABACUS", "data-DMR-sparse_SPIN0.csr"), 
+                    matrix_path=os.path.join(output_dir, "data-DMR-sparse_SPIN0.csr"), 
                     nsites=nsites,
                     site_norbits=site_norbits,
                     orbital_types_dict=orbital_types_dict,
@@ -248,9 +306,9 @@ class AbacusParser(Parser):
             if hamiltonian:
                 hamiltonian_dict = []
                 for i in range(sys.get_nframes()):
-                    if os.path.exists(os.path.join(self.raw_datas[idx], "OUT.ABACUS", "matrix/")):
+                    if os.path.exists(os.path.join(output_dir, "matrix/")):
                         hamil, tmp = self.parse_matrix(
-                            matrix_path=os.path.join(self.raw_datas[idx], "OUT.ABACUS", "matrix/"+str(i)+"_data-HR-sparse_SPIN0.csr"), 
+                            matrix_path=os.path.join(output_dir, "matrix/"+str(i)+"_data-HR-sparse_SPIN0.csr"), 
                             nsites=nsites,
                             site_norbits=site_norbits,
                             orbital_types_dict=orbital_types_dict,
@@ -260,7 +318,7 @@ class AbacusParser(Parser):
                             )
                     else:
                         hamil, tmp = self.parse_matrix(
-                            matrix_path=os.path.join(self.raw_datas[idx], "OUT.ABACUS/data-HR-sparse_SPIN0.csr"), 
+                            matrix_path=os.path.join(output_dir, "data-HR-sparse_SPIN0.csr"), 
                             nsites=nsites,
                             site_norbits=site_norbits,
                             orbital_types_dict=orbital_types_dict,
@@ -275,9 +333,9 @@ class AbacusParser(Parser):
             if overlap:
                 overlap_dict = []
                 for i in range(sys.get_nframes()):
-                    if os.path.exists(os.path.join(self.raw_datas[idx], "OUT.ABACUS", "matrix/")):
+                    if os.path.exists(os.path.join(output_dir, "matrix/")):
                         ovp, tmp = self.parse_matrix(
-                            matrix_path=os.path.join(self.raw_datas[idx], "OUT.ABACUS", "matrix/"+str(i)+"_data-SR-sparse_SPIN0.csr"), 
+                            matrix_path=os.path.join(output_dir, "matrix/"+str(i)+"_data-SR-sparse_SPIN0.csr"), 
                             nsites=nsites,
                             site_norbits=site_norbits,
                             orbital_types_dict=orbital_types_dict,
@@ -287,7 +345,7 @@ class AbacusParser(Parser):
                             )
                     else:
                         ovp, tmp = self.parse_matrix(
-                            matrix_path=os.path.join(self.raw_datas[idx], "OUT.ABACUS/data-SR-sparse_SPIN0.csr"), 
+                            matrix_path=os.path.join(output_dir, "data-SR-sparse_SPIN0.csr"), 
                             nsites=nsites,
                             site_norbits=site_norbits,
                             orbital_types_dict=orbital_types_dict,
@@ -309,9 +367,9 @@ class AbacusParser(Parser):
             if density_matrix:
                 density_matrix_dict = []
                 for i in range(sys.get_nframes()):
-                    if os.path.exists(os.path.join(self.raw_datas[idx], "OUT.ABACUS", "matrix/")):
+                    if os.path.exists(os.path.join(output_dir, "matrix/")):
                         dm, tmp = self.parse_matrix(
-                            matrix_path=os.path.join(self.raw_datas[idx], "OUT.ABACUS", "matrix/"+str(i)+"_data-DMR-sparse_SPIN0.csr"), 
+                            matrix_path=os.path.join(output_dir, "matrix/"+str(i)+"_data-DMR-sparse_SPIN0.csr"), 
                             nsites=nsites,
                             site_norbits=site_norbits,
                             orbital_types_dict=orbital_types_dict,
@@ -321,7 +379,7 @@ class AbacusParser(Parser):
                             )
                     else:
                         dm, tmp = self.parse_matrix(
-                            matrix_path=os.path.join(self.raw_datas[idx], "OUT.ABACUS/data-DMR-sparse_SPIN0.csr"), 
+                            matrix_path=os.path.join(output_dir, "data-DMR-sparse_SPIN0.csr"), 
                             nsites=nsites,
                             site_norbits=site_norbits,
                             orbital_types_dict=orbital_types_dict,
@@ -413,6 +471,169 @@ class AbacusParser(Parser):
         block_rights = block_diag(*[ABACUS2DFTIO[l_right] for l_right in l_rights])
 
         return block_lefts @ mat @ block_rights.T
+
+    @staticmethod
+    def _extract_energy_from_log(loglines, mode, dump_freq=1):
+        """
+        Extract total energy from ABACUS log file.
+
+        Note that this extractor is only validated for ABACUS versions 3.9.0.
+
+        For SCF/NSCF, extracts the final total energy.
+        For MD, extracts energies at each dump interval, filtering out unconverged frames.
+        For RELAX, extracts energies for the final converged structure.
+
+        Parameters
+        ----------
+        loglines : list of str
+            Lines from the log file
+        mode : str
+            Calculation mode (scf, nscf, md, relax)
+        dump_freq : int, optional
+            Dump frequency for MD calculations (default: 1)
+
+        Returns
+        -------
+        tuple or None
+            Tuple of (energy_array, unconverged_indices) where:
+            - energy_array: np.ndarray of energies in eV
+              * SCF/NSCF: shape (1,)
+              * MD: energies for converged frames at dump intervals
+              * RELAX: energies for converged relaxation steps.
+            - unconverged_indices: list of frame indices that did not converge
+              (currently only used for MD).
+
+            Returns None if extraction fails or all frames are unconverged. In RELAX
+            mode a ValueError is raised instead when relaxation does not converge or
+            no energies are found.
+        """
+        energy = []
+
+        if mode in ["scf", "nscf"]:
+            # For SCF/NSCF, search from the end for the final energy
+            for line in reversed(loglines):
+                if "final etot is" in line:
+                    # LTS version format: "final etot is <value> eV"
+                    Etot = float(line.split()[-2])
+                    return (np.array([Etot], dtype=np.float64), [])
+                elif "TOTAL ENERGY" in line:
+                    # Develop version format
+                    Etot = float(line.split()[-2])
+                    return (np.array([Etot], dtype=np.float64), [])
+                elif "convergence has NOT been achieved!" in line or \
+                     "convergence has not been achieved" in line:
+                    # SCF did not converge
+                    return None
+            return None
+
+        elif mode == "md":
+            # For MD, extract all energies at dump intervals
+            nenergy = 0
+            for line in loglines:
+                if "final etot is" in line:
+                    if nenergy % dump_freq == 0:
+                        energy.append(float(line.split()[-2]))
+                    nenergy += 1
+                elif "!! convergence has not been achieved" in line:
+                    if nenergy % dump_freq == 0:
+                        energy.append(np.nan)
+                    nenergy += 1
+
+            if len(energy) == 0:
+                return None
+
+            # Filter out unconverged frames (NaN values) and track their indices
+            energy = np.array(energy, dtype=np.float64)
+            valid_mask = ~np.isnan(energy)
+            if not valid_mask.any():
+                return None
+
+            # Get indices of unconverged frames
+            unconverged_indices = np.where(~valid_mask)[0].tolist()
+
+            # Filter to keep only converged frames
+            energy = energy[valid_mask]
+            return (energy, unconverged_indices)
+
+        elif mode == "relax":
+            relax_success = False
+            # For RELAX, extract energy for the converged structures
+            for line in loglines:
+                if "Relaxation is converged!" in line:
+                    relax_success = True
+                if "!FINAL_ETOT_IS" in line:
+                    energy.append(float(line.split()[-2]))
+
+            if relax_success and len(energy) > 0:
+                return (np.array(energy, dtype=np.float64), [])
+            else:
+                # raise error when relaxation did not converge or no energies found
+                raise ValueError("Relaxation did not converge or no energies found.")
+
+        else:
+            return None
+
+    def get_etot(self, idx):
+        """
+        Extract total energy (Etot) from ABACUS output.
+
+        Parameters
+        ----------
+        idx : int
+            Index of the structure/trajectory
+
+        Returns
+        -------
+        dict
+            Dictionary with:
+            - _keys.TOTAL_ENERGY_KEY: energy array in eV
+              * SCF/NSCF: shape (1,)
+              * MD/RELAX: length equals the number of converged frames at dump intervals.
+            - _keys.UNCONVERGED_FRAME_INDICES_KEY: list of unconverged frame indices
+              (empty if all frames converged).
+            Returns None if energy extraction fails or all frames are unconverged.
+            In RELAX mode, a ValueError is raised if relaxation did not converge or
+            no energies were found.
+        """
+        mode = self.get_mode(idx)
+        logfile = "running_" + mode + ".log"
+        logpath = os.path.join(self._get_output_dir(idx), logfile)
+
+        # Check if log file exists
+        if not os.path.exists(logpath):
+            raise FileNotFoundError(f"Log file {logpath} does not exist.")
+
+        # Read log file
+        with open(logpath, 'r') as f:
+            loglines = f.readlines()
+
+        # Get dump frequency for MD mode
+        dump_freq = 1
+        if mode == "md":
+            input_path = os.path.join(self.raw_datas[idx], "INPUT")
+            if os.path.exists(input_path):
+                with open(input_path, 'r') as f:
+                    for line in f:
+                        if len(line) > 0 and "md_dumpfreq" in line and "md_dumpfreq" == line.split()[0]:
+                            dump_freq = int(line.split()[1])
+                            break
+
+        # Extract energy
+        result = self._extract_energy_from_log(loglines, mode, dump_freq)
+
+        if result is None:
+            return None
+
+        energy, unconverged_indices = result
+
+        # Log warning if there are unconverged frames
+        if len(unconverged_indices) > 0:
+            log.warning(f"Energy extraction: frames {unconverged_indices} did not converge")
+
+        return {
+            _keys.TOTAL_ENERGY_KEY: energy,
+            _keys.UNCONVERGED_FRAME_INDICES_KEY: unconverged_indices
+        }
 
     def get_abs_h0_folders(self, h0_root):
         # Build a map of all directory names to their full paths to avoid repeated os.walk calls
