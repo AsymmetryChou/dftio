@@ -83,6 +83,11 @@ class VASPParser(Parser):
         assert os.path.exists(os.path.join(path, "OUTCAR"))
         energy = self.read_total_energy(os.path.join(path, "OUTCAR"))
         return {_keys.TOTAL_ENERGY_KEY: np.array([energy], dtype=np.float32)}
+
+    # Alias for compatibility with base Parser class
+    def get_etot(self, idx):
+        """Alias for get_total_energy to match base Parser convention."""
+        return self.get_total_energy(idx)
     
     @staticmethod
     def read_total_energy(file):
