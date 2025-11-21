@@ -31,7 +31,7 @@ dev = [
     "pytest>=7.2.0",
     "pytest-order==1.2.0",
     "pytest-cov",
-    "jupyter-book",
+    "jupyter-book>=0.15,<1.0",  # Use 0.x for Sphinx-based builds
     "sphinx-autodoc-typehints",
 ]
 
