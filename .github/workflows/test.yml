@@ -8,22 +8,17 @@ on:
 
 jobs:
   test:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest]
-        python-version: ["3.9", "3.10", "3.11", "3.12"]
+    runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v4
       with:
         fetch-depth: 0  # For setuptools-scm versioning
 
-    - name: Set up Python ${{ matrix.python-version }}
+    - name: Set up Python 3.10
       uses: actions/setup-python@v5
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: "3.10"
 
     - name: Install UV
       run: pip install uv
@@ -38,7 +33,6 @@ jobs:
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v5
-      if: matrix.python-version == '3.11'
       with:
         file: ./coverage.xml
         flags: unittests

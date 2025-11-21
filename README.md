@@ -3,7 +3,8 @@
 [![Documentation](https://img.shields.io/badge/docs-latest-brightgreen.svg)](https://deepmodeling.github.io/dftio/)
 [![Tests](https://github.com/deepmodeling/dftio/workflows/Tests/badge.svg)](https://github.com/deepmodeling/dftio/actions/workflows/test.yml)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Python](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-blue)](https://www.python.org/downloads/)
+[![Python](https://img.shields.io/badge/python-3.10-blue)](https://www.python.org/downloads/)
+
 
 dftio is to assist machine learning communities in transcribing and manipulating DFT output into a format that is easy to read or used by machine learning models. 
 
