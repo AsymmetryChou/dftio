@@ -10,7 +10,13 @@ chapters:
       - file: user-guide/parsing
       - file: user-guide/data-formats
       - file: user-guide/cli-reference
+      - file: user-guide/supported_packages
   - file: tutorials/index
+    sections:
+      - file: tutorials/plot_bands
   - file: api/index
+    sections:
+      - file: api/io
+      - file: api/data
   - file: developer-guide
   - file: contributing

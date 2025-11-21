@@ -1,119 +1,48 @@
-# Installation Guide
+# Installation
 
-## Prerequisites
+There are several ways to install `dftio`. The recommended method is to use the provided install script, which handles all dependencies automatically.
 
-- Python 3.9 - 3.12
-- pip (Python package installer)
+## Using the Install Script (Recommended)
 
-## Recommended: Using the Install Script
-
-The easiest way to install dftio is using the provided installation script, which automatically handles the `torch-scatter` dependency:
-
-### CPU Version (Default)
+The easiest way to install `dftio` is by running the `install.sh` script in the root of the repository.
 
 ```bash
-git clone https://github.com/deepmodeling/dftio.git
-cd dftio
+# For a standard CPU-only installation
 ./install.sh
-```
 
-### GPU Version
-
-For CUDA-enabled GPUs, specify your CUDA version:
-
-```bash
-# CUDA 11.8
-./install.sh cu118
-
-# CUDA 12.1
+# If you have a CUDA-compatible GPU (e.g., CUDA 12.1)
 ./install.sh cu121
-
-# CUDA 12.4
-./install.sh cu124
 ```
+
+This script ensures that all dependencies, including specific versions of PyTorch and `torch-scatter`, are installed correctly.
 
 ## Manual Installation with UV
 
-If you prefer manual control:
+If you prefer to manage the installation yourself, you can use `uv`.
 
-### 1. Install UV
+1.  **Install uv:**
+    If you don't have `uv`, install it via pip:
+    ```bash
+    pip install uv
+    ```
 
-```bash
-pip install uv
-```
+2.  **Sync Dependencies:**
+    Use `uv sync` to install the required packages from `pyproject.toml`.
 
-### 2. Clone the Repository
+    ```bash
+    # For a CPU-only installation
+    uv sync --group dev
 
-```bash
-git clone https://github.com/deepmodeling/dftio.git
-cd dftio
-```
+    # For a GPU installation (e.g., CUDA 12.1), specify the PyTorch find-links URL
+    uv sync --group dev --find-links https://data.pyg.org/whl/torch-2.5.0+cu121.html
+    ```
+    Including the `--group dev` flag will also install the packages required for testing and building documentation.
 
-### 3. Install Dependencies
+## Using pip (from PyPI)
 
-**CPU version:**
-```bash
-uv sync
-```
-
-**GPU version (CUDA 12.1 example):**
-```bash
-uv sync --find-links https://data.pyg.org/whl/torch-2.5.0+cu121.html
-```
-
-## Development Installation
-
-For development, install with dev dependencies:
+*Coming soon. Once `dftio` is published to the Python Package Index (PyPI), you will be able to install it directly with `pip`.*
 
 ```bash
-uv sync --group dev
+# This will be enabled in a future release
+# pip install dftio
 ```
-
-This includes additional tools for:
-- Testing (pytest, pytest-cov)
-- Documentation (jupyter-book, sphinx-autodoc-typehints)
-
-## Verify Installation
-
-After installation, verify that dftio is working:
-
-```bash
-uv run dftio --help
-```
-
-You should see the dftio command-line interface help message.
-
-## Troubleshooting
-
-### torch-scatter Installation Issues
-
-The most common installation issue involves `torch-scatter`. This package requires special handling because it needs to match your PyTorch and CUDA versions.
-
-**Solution**: Use the install script or the `--find-links` option as shown above.
-
-### Python Version Issues
-
-dftio requires Python 3.9-3.12. Check your Python version:
-
-```bash
-python --version
-```
-
-If you have multiple Python versions, specify the correct one with UV:
-
-```bash
-uv sync --python python3.11
-```
-
-### Network Issues
-
-If you experience network timeouts, try:
-
-```bash
-uv sync --no-cache
-```
-
-## Next Steps
-
-- [Quick Start Guide](user-guide/quickstart.md)
-- [CLI Reference](user-guide/cli-reference.md)

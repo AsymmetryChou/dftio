@@ -1,12 +1,11 @@
 # API Reference
 
-API documentation for dftio modules.
+This section provides detailed, auto-generated documentation for the `dftio` Python API. Use this reference to understand the internal components, data structures, and parser implementations.
 
-(To be auto-generated from docstrings using Sphinx autodoc)
+The API is organized into several key modules:
 
-## Main Modules
+- **[I/O and Parsers (`dftio.io`)](./io.md):** The core parsing engine, including the abstract base parser and specific implementations for each supported DFT code.
 
-- `dftio.io` - DFT parsers
-- `dftio.data` - Dataset classes
-- `dftio.datastruct` - Data structures
-- `dftio.op` - Operations and utilities
+- **[Data Structures (`dftio.data`)](./data.md):** The internal data containers used to store and manage atomic structures and calculation results.
+
+For details on how to use these components, please refer to the pages linked above.
