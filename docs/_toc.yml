@@ -1,0 +1,16 @@
+# Table of Contents for dftio Documentation
+
+format: jb-book
+root: index
+chapters:
+  - file: installation
+  - file: user-guide/index
+    sections:
+      - file: user-guide/quickstart
+      - file: user-guide/parsing
+      - file: user-guide/data-formats
+      - file: user-guide/cli-reference
+  - file: tutorials/index
+  - file: api/index
+  - file: developer-guide
+  - file: contributing

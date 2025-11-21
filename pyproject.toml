@@ -1,50 +1,72 @@
-[tool.poetry]
+[project]
 name = "dftio"
-version = "0.0.0"
-license = "MIT"
+dynamic = ["version"]
 description = "dftio is to assist machine learning communities to transcript DFT output into a format that is easy to read or used by machine learning models."
-authors = ["Z. Zhouyin <zhouyinzhanghao@gmail.com>"]
+authors = [
+    {name = "Z. Zhouyin", email = "zhouyinzhanghao@gmail.com"}
+]
 readme = "README.md"
-repository = "https://github.com/floatingCatty/dftio"
+license = {text = "MIT"}
+requires-python = ">=3.9,<3.13"
+dependencies = [
+    "numpy",
+    "scipy>=1.11,<1.12",
+    "matplotlib",
+    "torch>=2.0.0,<2.5.1",
+    "ase",
+    "pyyaml",
+    "future",
+    "dargs==0.4.4",
+    "e3nn>=0.5.1",
+    "h5py>=3.7.0,<3.11.0,!=3.10.0",
+    "lmdb==1.4.1",
+    "sisl>=0.14.3",
+    "dpdata>=0.2.20",
+    "torch-scatter==2.1.2",
+    "tqdm",
+]
 
-[tool.poetry.dependencies]
-python = ">=3.9, <=3.12.9"
-pytest = ">=7.2.0"
-pytest-order = "1.2.0"
-numpy = "*"
-scipy = "<=1.12,>=1.11"
-matplotlib = "*"
-torch = ">=2.0.0,<=2.5.1"
-ase = "*"
-pyyaml = "*"
-future = "*"
-dargs = "0.4.4"
-e3nn = ">=0.5.1"
-h5py = ">=3.7.0,<=3.11.0,!=3.10.0"
-lmdb = "1.4.1"
-sisl = ">=0.14.3"
-dpdata = ">=0.2.20"
-torch_scatter = "2.1.2"
-tqdm = "*"
+[dependency-groups]
+dev = [
+    "pytest>=7.2.0",
+    "pytest-order==1.2.0",
+    "pytest-cov",
+    "jupyter-book",
+    "sphinx-autodoc-typehints",
+]
 
-[tool.poetry.scripts]
-dftio = 'dftio.__main__:main'
+[project.scripts]
+dftio = "dftio.__main__:main"
+
+[project.urls]
+Repository = "https://github.com/deepmodeling/dftio"
 
 [build-system]
-requires = ["poetry-core", "poetry-dynamic-versioning"]
-build-backend = "poetry_dynamic_versioning.backend"
+requires = ["setuptools>=64", "setuptools-scm>=8"]
+build-backend = "setuptools.build_meta"
 
+[tool.setuptools_scm]
+version_file = "dftio/_version.py"
+local_scheme = "no-local-version"
 
-[tool.poetry-dynamic-versioning]
-enable = true
-vcs = "git"
-strict = true
-format-jinja = """
-    {%- if distance == 0 -%}
-        {{ serialize_pep440(base, stage, revision) }}
-    {%- elif revision is not none -%}
-        {{ serialize_pep440(base, stage, revision + 1, dev=distance, metadata=[commit]) }}
-    {%- else -%}
-        {{ serialize_pep440(bump_version(base), stage, revision, dev=distance, metadata=[commit]) }}
-    {%- endif -%}
-"""
+# UV 特定配置
+# PyTorch Geometric 为 torch_scatter 提供预编译的 wheel
+# 默认: CPU 版本。如需 GPU 版本，使用:
+#   uv sync --find-links https://data.pyg.org/whl/torch-2.5.0+cu121.html
+[tool.uv]
+find-links = ["https://data.pyg.org/whl/torch-2.5.0+cpu.html"]
+
+# Pytest 配置
+# - testpaths: 指定测试文件所在目录
+# - python_files/classes/functions: 定义测试文件、类、函数的命名规则
+# - addopts: 默认命令行参数 (-v 详细输出, --tb=short 简短的错误追踪)
+# - markers: 自定义标记，integration 用于标记集成测试，CI 中会跳过这些测试
+[tool.pytest.ini_options]
+testpaths = ["test"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short"
+markers = [
+    "integration: marks tests as integration tests (deselect with '-m \"not integration\"')",
+]
