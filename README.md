@@ -15,21 +15,22 @@ However, the user can always manage the dependency themselves, here are the pack
 
 Current:
 
-| Package  | Structure | Eigenvalues | Hamiltonian | Density matrix | Overlap matrix |
-|:--------:|:---------:|:-----------:|    :----:   |     :----:     |     :----:     |
-|  ABACUS  |     √     |      √      | √           | √              | √              |
-|  RESCU   |     √     |             | √           |                | √              |
-|  SIESTA  |     √     |             | √           | √              | √              |
-| Gaussian |     √     |             | √           | √              | √              |
-|   VASP   |     √     |      √      |             |                |                |
-|  PYATB   |     √     |      √      |             |                |                |
+| Package  | Structure | Eigenvalues | Hamiltonian | Density matrix | Overlap matrix | Total energy |
+|:--------:|:---------:|:-----------:|    :----:   |     :----:     |     :----:     |   :----:     |
+|  ABACUS  |     √     |      √      | √           | √              | √              | √            |
+|  RESCU   |     √     |             | √           |                | √              |              |
+|  SIESTA  |     √     |             | √           | √              | √              |              |
+| Gaussian |     √     |             | √           | √              | √              |              |
+|   VASP   |     √     |      √      |             |                |                | √            |
+|  PYATB   |     √     |      √      |             |                |                |              |
 
 Ongoing:
 
-- Charge density
+- Charge Density
 - Atomic Orbitals
 - Wave Function
 - Wave Function Coefficients
+- Total Energy
 
 
 ## How to use
@@ -61,6 +62,7 @@ options:
   -eig, --eigenvalue    Whether to parse the kpoints and eigenvalues (default: False)
   -min BAND_INDEX_MIN, --band_index_min BAND_INDEX_MIN
                         The initial band index for eigenvalues to save.(0-band_index_min) bands will be ignored! (default: 0)
+  -energy, --energy     Whether to parse the total energy from DFT output (default: False)
 ```
 
 ## Call for Contributors
