@@ -23,7 +23,7 @@ def abacus_parser(tmp_path):
     out_abacus_dir.mkdir()
 
     # Copy the test data to the temporary directory
-    test_data_src = "test/data/abacus/OUT.ABACUS"
+    test_data_src = "test/data/abacus_scf/OUT.ABACUS"
     for item in os.listdir(test_data_src):
         s = os.path.join(test_data_src, item)
         d = os.path.join(out_abacus_dir, item)
