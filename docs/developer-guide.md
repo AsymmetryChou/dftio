@@ -28,7 +28,7 @@ In your new parser file, you will need to create a parser class that inherits fr
 
 - **`get_structure(idx)`**: This method should read the atomic structure information (atomic numbers, positions, cell, etc.) for a given calculation index (`idx`). It should return a dictionary of this data.
 
-- **`get_eigenvalues(idx)`**: This method should parse the eigenvalues and k-points from the DFT output files.
+- **`get_eigenvalue(idx)`**: This method should parse the eigenvalues and k-points from the DFT output files.
 
 - **`get_basis(idx)`**: This method should return information about the basis set used in the calculation.
 
