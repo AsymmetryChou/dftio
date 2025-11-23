@@ -119,7 +119,7 @@ class VASPParser(Parser):
         energy = energy[-1] if energy else None
         assert energy is not None, "Cannot find energy(sigma->0) in OUTCAR."
         if not success_completion:
-            log.warning(f"{file} does not indicate successful completion.")
+            log.warning(f"WARNING!!!  {file} does not indicate successful completion.")
         
         energy = np.array(energy, dtype=np.float64)
         return energy
