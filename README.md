@@ -1,15 +1,51 @@
 # dftio
+
+[![Documentation](https://img.shields.io/badge/docs-latest-brightgreen.svg)](https://deepmodeling.github.io/dftio/)
+[![Tests](https://github.com/deepmodeling/dftio/workflows/Tests/badge.svg)](https://github.com/deepmodeling/dftio/actions/workflows/test.yml)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.10-blue)](https://www.python.org/downloads/)
+
+
 dftio is to assist machine learning communities in transcribing and manipulating DFT output into a format that is easy to read or used by machine learning models. 
 
 dftio uses multiprocessing to paralleling the processing, and provide a standard dataset class that reads the processed dataset directly.
 
 ## Installation
-The user can install dftio once located in the root directory, and run:
+
+### Using the install script (Recommended)
+
+The easiest way to install dftio is using the provided installation script:
+
 ```bash
-pip install .
+# CPU version (default)
+./install.sh
+
+# Or for GPU with CUDA 12.1
+./install.sh cu121
 ```
-The dependent packages will be installed accordingly.
-However, the user can always manage the dependency themselves, here are the packages that dftio requires:
+
+### Manual installation with UV
+
+If you prefer manual installation:
+
+```bash
+# Install UV if you haven't already
+pip install uv
+
+# Install dftio (CPU version)
+uv sync
+
+# Or for GPU version
+uv sync --find-links https://data.pyg.org/whl/torch-2.5.0+cu121.html
+```
+
+### Using pip (from PyPI - coming soon)
+
+```bash
+pip install dftio
+```
+
+**Note**: dftio depends on `torch-scatter` which requires special handling. The install script automatically manages this for you.
 
 ## Supports
 

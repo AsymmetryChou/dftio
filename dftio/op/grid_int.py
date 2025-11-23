@@ -34,7 +34,8 @@ class SingleGridIntegrator:
     def integrate(self, weights=None):
         
         ngrid = len(self.grids)
-        results = torch.zeros(ngrid, dtype=weights.dtype)
+        dtype = weights.dtype if weights is not None else self.dtype
+        results = torch.zeros(ngrid, dtype=dtype)
         norbs = [self.atomic_basis[atomic_numbers_r[int(i)]].irreps.dim for i in self.atomic_numbers]
         cnorbs = torch.cumsum(torch.tensor([0]+norbs), dim=0)[:-1]
         for element in self.atomic_basis:

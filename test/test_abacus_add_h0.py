@@ -1,9 +1,11 @@
 import os
 import shutil
+import pytest
 from dftio.io.abacus.abacus_parser import AbacusParser
 from tqdm import tqdm
 
 
+@pytest.mark.integration
 def main():
     parser = AbacusParser(
         root=r'/share/mp_20_abacus_production/15_elements_0524/train_50_nscf/cooking',

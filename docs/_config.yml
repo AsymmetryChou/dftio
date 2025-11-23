@@ -1,0 +1,44 @@
+# Jupyter Book Configuration
+# Learn more at https://jupyterbook.org/customize/config.html
+
+title: dftio Documentation
+author: dftio Team
+copyright: "2025"
+logo: ""
+
+# Force re-execution of notebooks on each build
+execute:
+  execute_notebooks: auto
+  timeout: 600
+
+# Define the name of the latex output file for PDF builds
+latex:
+  latex_documents:
+    targetname: dftio.tex
+
+# Add a bibtex file so that we can create citations
+bibtex_bibfiles:
+  - references.bib
+
+# Information about where the book exists on the web
+repository:
+  url: https://github.com/deepmodeling/dftio
+  path_to_book: docs
+  branch: main
+
+# Add GitHub buttons to your book
+html:
+  use_issues_button: true
+  use_repository_button: true
+  use_edit_page_button: true
+
+# Sphinx configuration
+sphinx:
+  extra_extensions:
+    - sphinx.ext.autodoc
+    - sphinx.ext.napoleon
+    - sphinx.ext.viewcode
+    - sphinx_autodoc_typehints
+  config:
+    html_theme: sphinx_book_theme
+    autodoc_typehints: description
